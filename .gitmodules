@@ -1,0 +1,9 @@
+[submodule "external/aap-lv2"]
+	path = external/aap-lv2
+	url = https://github.com/atsushieno/aap-lv2.git
+[submodule "external/sfizz"]
+	path = external/sfizz
+	url = https://github.com/sfztools/sfizz.git
+[submodule "external/lv2"]
+	path = external/lv2
+	url = https://github.com/lv2/lv2.git

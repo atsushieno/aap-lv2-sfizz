@@ -1,0 +1,14 @@
+.gradle
+.idea
+.cxx
+local.properties
+/*/build
+build
+
+aap-sfizz/src/main/jniLibs/
+
+android-libsndfile-binaries.zip
+androidaudioplugin-debug.aar
+
+dependencies/sfizz-deps/
+dependencies/androidaudioplugin-aar/
