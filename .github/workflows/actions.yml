@@ -24,7 +24,7 @@ jobs:
         java-version: 11
     - name: apt install
       run: |
-        echo y | sudo apt-get install cmake ninja-build
+        echo y | sudo apt-get install doxygen libgrpc++-dev libgrpc-dev libprotobuf-dev graphviz cmake ninja-build liblilv-dev
     - name: stupid NDK setup workaround for GitHub Actions
       run: sudo chmod 777 /usr/local/lib/android/sdk/ && mkdir -p /usr/local/lib/android/sdk/ndk
     - name: build
@@ -52,7 +52,7 @@ jobs:
         java-version: 11
     - name: install deps
       run: |
-        brew install cmake ninja
+        brew install cmake doxygen ninja graphviz lilv
     - name: build
       run: make
       env:
