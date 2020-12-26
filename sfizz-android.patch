@@ -21,6 +21,61 @@ index 20c9660a..417d5a8e 100644
          target_include_directories(sfizz-sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
          if (SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz-sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
+diff --git a/external/st_audiofile/thirdparty/libaiff b/external/st_audiofile/thirdparty/libaiff
+index ce5a0167..78864a4a 160000
+--- a/external/st_audiofile/thirdparty/libaiff
++++ b/external/st_audiofile/thirdparty/libaiff
+@@ -1 +1 @@
+-Subproject commit ce5a0167a3d636915d62ad59232e20367557164d
++Subproject commit 78864a4a2e769e426be8cfd78ae7f5f72e236c33
+diff --git a/lv2/CMakeLists.txt b/lv2/CMakeLists.txt
+index 743b26d2..ed2ae7a9 100644
+--- a/lv2/CMakeLists.txt
++++ b/lv2/CMakeLists.txt
+@@ -62,12 +62,12 @@ endif()
+ # <build_dir>/lv2/<plugin_name>.lv2/<plugin_name>.<ext>
+ set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES PREFIX "")
+ set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
+-set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Contents/Binary/$<0:>")
++set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/$<0:>")
+ 
+ if (SFIZZ_LV2_UI)
+     set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES PREFIX "")
+     set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES OUTPUT_NAME "${PROJECT_NAME}_ui")
+-    set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Contents/Binary/$<0:>")
++    set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/$<0:>")
+ endif()
+ 
+ # Generate *.ttl files from *.in sources,
+@@ -108,9 +108,9 @@ if (NOT MSVC)
+     install(DIRECTORY ${PROJECT_BINARY_DIR} DESTINATION ${LV2PLUGIN_INSTALL_DIR}
+         COMPONENT "lv2")
+     bundle_dylibs(lv2
+-        "${LV2PLUGIN_INSTALL_DIR}/${PROJECT_NAME}.lv2/Contents/Binary/sfizz.so"
++        "${LV2PLUGIN_INSTALL_DIR}/${PROJECT_NAME}.lv2/sfizz.so"
+         COMPONENT "lv2")
+     bundle_dylibs(lv2-ui
+-        "${LV2PLUGIN_INSTALL_DIR}/${PROJECT_NAME}.lv2/Contents/Binary/sfizz_ui.so"
++        "${LV2PLUGIN_INSTALL_DIR}/${PROJECT_NAME}.lv2/sfizz_ui.so"
+         COMPONENT "lv2")
+ endif()
+diff --git a/lv2/manifest.ttl.in b/lv2/manifest.ttl.in
+index ab407d33..d6832c0e 100644
+--- a/lv2/manifest.ttl.in
++++ b/lv2/manifest.ttl.in
+@@ -4,10 +4,10 @@
+ 
+ <@LV2PLUGIN_URI@>
+   a lv2:Plugin ;
+-  lv2:binary <Contents/Binary/@PROJECT_NAME@@CMAKE_SHARED_MODULE_SUFFIX@> ;
++  lv2:binary <@PROJECT_NAME@@CMAKE_SHARED_MODULE_SUFFIX@> ;
+   rdfs:seeAlso <@PROJECT_NAME@.ttl> .
+ 
+ @LV2PLUGIN_IF_ENABLE_UI@<@LV2PLUGIN_URI@#ui>
+ @LV2PLUGIN_IF_ENABLE_UI@    a ui:@LV2_UI_TYPE@ ;
+-@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <Contents/Binary/@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
++@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
+ @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index 539a2ec0..a54faeca 100644
 --- a/src/CMakeLists.txt
@@ -187,3 +242,24 @@ index 7e271e26..5f75a164 100644
  /**
   * @brief File-based version of Reader.
   */
+diff --git a/vst/external/VST_SDK/VST3_SDK/base b/vst/external/VST_SDK/VST3_SDK/base
+index 4f6a7184..7b977c03 160000
+--- a/vst/external/VST_SDK/VST3_SDK/base
++++ b/vst/external/VST_SDK/VST3_SDK/base
+@@ -1 +1 @@
+-Subproject commit 4f6a7184f20f40a7c940a6717e6e0d8b35eeea63
++Subproject commit 7b977c031f42a6bab08e8b10f4f8df0a1f516c38
+diff --git a/vst/external/VST_SDK/VST3_SDK/pluginterfaces b/vst/external/VST_SDK/VST3_SDK/pluginterfaces
+index 8c07a58d..fe202edc 160000
+--- a/vst/external/VST_SDK/VST3_SDK/pluginterfaces
++++ b/vst/external/VST_SDK/VST3_SDK/pluginterfaces
+@@ -1 +1 @@
+-Subproject commit 8c07a58d84c544a73e1ccad2efae200505796773
++Subproject commit fe202edc93e9a01a1f79a614cc9a292dc9bf3e6e
+diff --git a/vst/external/VST_SDK/VST3_SDK/public.sdk b/vst/external/VST_SDK/VST3_SDK/public.sdk
+index b63097eb..a3a3ed1b 160000
+--- a/vst/external/VST_SDK/VST3_SDK/public.sdk
++++ b/vst/external/VST_SDK/VST3_SDK/public.sdk
+@@ -1 +1 @@
+-Subproject commit b63097ebce2105845aa97d04808fca4dfd51307c
++Subproject commit a3a3ed1b1620df0b064564f1fd5423ae110234a0

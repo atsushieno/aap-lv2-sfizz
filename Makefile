@@ -31,7 +31,7 @@ dependencies/sfizz-deps/dist/stamp: android-libsndfile-binaries.zip androidaudio
 	touch dependencies/sfizz-deps/dist/stamp
 
 android-libsndfile-binaries.zip:
-	wget https://github.com/atsushieno/android-native-audio-builders/releases/download/r7/android-libsndfile-binaries.zip
+	wget https://github.com/atsushieno/android-native-audio-builders/releases/download/r8.3/android-libsndfile-binaries.zip
 
 androidaudioplugin-debug.aar:
 	wget https://github.com/atsushieno/android-audio-plugin-framework/releases/download/v0.5.5/androidaudioplugin-debug.aar
