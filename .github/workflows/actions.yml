@@ -6,7 +6,7 @@ on:
 
 jobs:
   linux-init:
-    name: build on linux
+    name: init on linux
     runs-on: ubuntu-20.04
     outputs:
       skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
