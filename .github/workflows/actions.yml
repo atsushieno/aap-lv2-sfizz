@@ -5,9 +5,24 @@ on:
   pull_request:
 
 jobs:
+  linux-init:
+    name: build on linux
+    runs-on: ubuntu-20.04
+    outputs:
+      skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
+      skip-not: ${{ steps.ci-skip-step.outputs.ci-skip-not }}
+    steps:
+    - id: ci-skip-step
+      uses: mstachniuk/ci-skip@v1
+      with:
+        commit-filter: '[ci skip];[CI skip];[CI-skip];[ci-skip];[CI SKIP];[CI-SKIP]'
+        commit-filter-separator: ';'
+
   linux-build:
     name: build on linux
     runs-on: ubuntu-20.04
+    needs: linux-init
+    if: ${{ needs.linux-init.outputs.skip == 'false' }}
     steps:
     - name: checkout
       uses: actions/checkout@v1
@@ -43,9 +58,24 @@ jobs:
         name: aap-sfizz-debug.apk
         path: ./aap-sfizz/build/outputs/apk/debug/aap-sfizz-debug.apk
   
+  osx-init:
+    name: init on osx
+    runs-on: macos-10.15
+    outputs:
+      skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
+      skip-not: ${{ steps.ci-skip-step.outputs.ci-skip-not }}
+    steps:
+    - id: ci-skip-step
+      uses: mstachniuk/ci-skip@v1
+      with:
+        commit-filter: '[ci skip];[CI skip];[CI-skip];[ci-skip];[CI SKIP];[CI-SKIP]'
+        commit-filter-separator: ';'
+
   osx-build:
     name: build on osx
     runs-on: macos-10.15
+    needs: osx-init
+    if: ${{ needs.osx-init.outputs.skip == 'false' }}
     steps:
     - name: checkout
       uses: actions/checkout@v1
