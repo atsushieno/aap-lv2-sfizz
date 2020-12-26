@@ -21,13 +21,6 @@ index 20c9660a..417d5a8e 100644
          target_include_directories(sfizz-sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
          if (SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz-sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
-diff --git a/external/st_audiofile/thirdparty/libaiff b/external/st_audiofile/thirdparty/libaiff
-index ce5a0167..78864a4a 160000
---- a/external/st_audiofile/thirdparty/libaiff
-+++ b/external/st_audiofile/thirdparty/libaiff
-@@ -1 +1 @@
--Subproject commit ce5a0167a3d636915d62ad59232e20367557164d
-+Subproject commit 78864a4a2e769e426be8cfd78ae7f5f72e236c33
 diff --git a/lv2/CMakeLists.txt b/lv2/CMakeLists.txt
 index 743b26d2..ed2ae7a9 100644
 --- a/lv2/CMakeLists.txt
@@ -242,24 +235,3 @@ index 7e271e26..5f75a164 100644
  /**
   * @brief File-based version of Reader.
   */
-diff --git a/vst/external/VST_SDK/VST3_SDK/base b/vst/external/VST_SDK/VST3_SDK/base
-index 4f6a7184..7b977c03 160000
---- a/vst/external/VST_SDK/VST3_SDK/base
-+++ b/vst/external/VST_SDK/VST3_SDK/base
-@@ -1 +1 @@
--Subproject commit 4f6a7184f20f40a7c940a6717e6e0d8b35eeea63
-+Subproject commit 7b977c031f42a6bab08e8b10f4f8df0a1f516c38
-diff --git a/vst/external/VST_SDK/VST3_SDK/pluginterfaces b/vst/external/VST_SDK/VST3_SDK/pluginterfaces
-index 8c07a58d..fe202edc 160000
---- a/vst/external/VST_SDK/VST3_SDK/pluginterfaces
-+++ b/vst/external/VST_SDK/VST3_SDK/pluginterfaces
-@@ -1 +1 @@
--Subproject commit 8c07a58d84c544a73e1ccad2efae200505796773
-+Subproject commit fe202edc93e9a01a1f79a614cc9a292dc9bf3e6e
-diff --git a/vst/external/VST_SDK/VST3_SDK/public.sdk b/vst/external/VST_SDK/VST3_SDK/public.sdk
-index b63097eb..a3a3ed1b 160000
---- a/vst/external/VST_SDK/VST3_SDK/public.sdk
-+++ b/vst/external/VST_SDK/VST3_SDK/public.sdk
-@@ -1 +1 @@
--Subproject commit b63097ebce2105845aa97d04808fca4dfd51307c
-+Subproject commit a3a3ed1b1620df0b064564f1fd5423ae110234a0
