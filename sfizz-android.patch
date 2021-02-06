@@ -1,46 +1,46 @@
-diff --git a/cmake/SfizzConfig.cmake b/cmake/SfizzConfig.cmake
-index 20c9660a..417d5a8e 100644
---- a/cmake/SfizzConfig.cmake
-+++ b/cmake/SfizzConfig.cmake
-@@ -101,8 +101,18 @@ if (SFIZZ_USE_SNDFILE OR SFIZZ_DEMOS OR SFIZZ_BENCHMARKS OR SFIZZ_RENDER)
-         target_include_directories(sfizz-sndfile INTERFACE "${SNDFILE_INCLUDE_DIR}")
-         target_link_libraries(sfizz-sndfile INTERFACE SndFile::sndfile)
+diff --git a/cmake/SfizzDeps.cmake b/cmake/SfizzDeps.cmake
+index 3dcb1916..42c677c2 100644
+--- a/cmake/SfizzDeps.cmake
++++ b/cmake/SfizzDeps.cmake
+@@ -45,8 +45,18 @@ if(SFIZZ_USE_SNDFILE OR SFIZZ_DEMOS OR SFIZZ_BENCHMARKS OR SFIZZ_RENDER)
+         target_include_directories(sfizz_sndfile INTERFACE "${SNDFILE_INCLUDE_DIR}")
+         target_link_libraries(sfizz_sndfile INTERFACE SndFile::sndfile)
      else()
 +        if (ANDROID)
 +            get_filename_component (LV2_INCLUDE "../../../external/lv2/" ABSOLUTE)
-+            get_filename_component (SFIZZ_DEPS_DIST "${CMAKE_CURRENT_LIST_DIR}}/../../../dependencies/sfizz-deps/dist/${CMAKE_ANDROID_ARCH_ABI}" ABSOLUTE)
++            get_filename_component (SFIZZ_DEPS_DIST "../../../dependencies/sfizz-deps/dist/${CMAKE_ANDROID_ARCH_ABI}" ABSOLUTE)
 +            set (ENV{PKG_CONFIG_PATH} "${SFIZZ_DEPS_DIST}/lib/pkgconfig")
 +        endif (ANDROID)
          find_package(PkgConfig REQUIRED)
          pkg_check_modules(SNDFILE "sndfile" REQUIRED)
 +        if (ANDROID) # FIXME: it is kind of hack, we should resort to pkg-config...
-+            target_include_directories(sfizz-sndfile INTERFACE ${LV2_INCLUDE} ${SFIZZ_DEPS_DIST}/include)
-+            target_link_directories(sfizz-sndfile INTERFACE ${SFIZZ_DEPS_DIST}/lib)
-+            target_link_libraries(sfizz-sndfile INTERFACE sndfile ogg vorbis vorbisenc vorbisfile FLAC)
++            target_include_directories(sfizz_sndfile INTERFACE ${LV2_INCLUDE} ${SFIZZ_DEPS_DIST}/include)
++            target_link_directories(sfizz_sndfile INTERFACE ${SFIZZ_DEPS_DIST}/lib)
++            target_link_libraries(sfizz_sndfile INTERFACE sndfile ogg vorbis vorbisenc vorbisfile FLAC)
 +        endif (ANDROID)
-         target_include_directories(sfizz-sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
-         if (SFIZZ_STATIC_DEPENDENCIES)
-             target_link_libraries(sfizz-sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
+         target_include_directories(sfizz_sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
+         if(SFIZZ_STATIC_DEPENDENCIES)
+             target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
 diff --git a/lv2/CMakeLists.txt b/lv2/CMakeLists.txt
-index 743b26d2..ed2ae7a9 100644
+index 39c447ec..0efdd27c 100644
 --- a/lv2/CMakeLists.txt
 +++ b/lv2/CMakeLists.txt
-@@ -62,12 +62,12 @@ endif()
+@@ -60,12 +60,12 @@ endif()
  # <build_dir>/lv2/<plugin_name>.lv2/<plugin_name>.<ext>
- set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES PREFIX "")
- set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
--set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Contents/Binary/$<0:>")
-+set_target_properties (${LV2PLUGIN_PRJ_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/$<0:>")
+ set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES PREFIX "")
+ set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
+-set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Contents/Binary/$<0:>")
++set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/$<0:>")
  
- if (SFIZZ_LV2_UI)
-     set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES PREFIX "")
-     set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES OUTPUT_NAME "${PROJECT_NAME}_ui")
--    set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Contents/Binary/$<0:>")
-+    set_target_properties (${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/$<0:>")
+ if(SFIZZ_LV2_UI)
+     set_target_properties(${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES PREFIX "")
+     set_target_properties(${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES OUTPUT_NAME "${PROJECT_NAME}_ui")
+-    set_target_properties(${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Contents/Binary/$<0:>")
++    set_target_properties(${LV2PLUGIN_PRJ_NAME}_ui PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/$<0:>")
  endif()
  
  # Generate *.ttl files from *.in sources,
-@@ -108,9 +108,9 @@ if (NOT MSVC)
+@@ -106,9 +106,9 @@ if(NOT MSVC)
      install(DIRECTORY ${PROJECT_BINARY_DIR} DESTINATION ${LV2PLUGIN_INSTALL_DIR}
          COMPONENT "lv2")
      bundle_dylibs(lv2
@@ -69,45 +69,3 @@ index ab407d33..d6832c0e 100644
 -@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <Contents/Binary/@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 539a2ec0..a54faeca 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -213,6 +213,13 @@ target_include_directories (sfizz_parser PUBLIC sfizz)
- target_include_directories (sfizz_parser PUBLIC external)
- target_link_libraries (sfizz_parser PUBLIC absl::strings PRIVATE absl::flat_hash_map)
- 
-+if (ANDROID)
-+    get_filename_component(AAP_INCLUDE_DIR "../../../aap-include-hack/include" ABSOLUTE)
-+    get_filename_component(AAP_REF_LIB_DIR "../../../dependencies/androidaudioplugin-aar/jni/${CMAKE_ANDROID_ARCH_ABI}" ABSOLUTE)
-+
-+    target_include_directories (sfizz_parser PUBLIC "${AAP_INCLUDE_DIR}")
-+endif()
-+
- # Sfizz static library
- add_library(sfizz_static STATIC)
- target_sources(sfizz_static PRIVATE
-@@ -221,6 +228,11 @@ target_include_directories (sfizz_static PUBLIC .)
- target_include_directories (sfizz_static PUBLIC external)
- target_link_libraries (sfizz_static PUBLIC absl::strings absl::span)
- target_link_libraries (sfizz_static PRIVATE sfizz_parser absl::flat_hash_map Threads::Threads st_audiofile sfizz-pugixml sfizz-spline sfizz-tunings sfizz-kissfft sfizz-cpuid sfizz-jsl sfizz-atomic)
-+if (ANDROID)
-+    target_include_directories (sfizz_static PUBLIC "${AAP_INCLUDE_DIR}")
-+    target_link_directories (sfizz_static PUBLIC "${AAP_REF_LIB_DIR}")
-+    target_link_libraries(sfizz_static PRIVATE android androidaudioplugin)
-+endif()
- set_target_properties (sfizz_static PROPERTIES OUTPUT_NAME sfizz PUBLIC_HEADER "sfizz.h;sfizz.hpp")
- if (WIN32)
-     target_compile_definitions (sfizz_static PRIVATE _USE_MATH_DEFINES)
-@@ -248,6 +260,11 @@ if (SFIZZ_SHARED)
-     target_include_directories (sfizz_shared PRIVATE .)
-     target_include_directories (sfizz_shared PRIVATE external)
-     target_link_libraries (sfizz_shared PRIVATE absl::strings absl::span sfizz_parser absl::flat_hash_map Threads::Threads st_audiofile sfizz-pugixml sfizz-spline sfizz-tunings sfizz-kissfft sfizz-cpuid sfizz-jsl sfizz-atomic)
-+    if (ANDROID)
-+        target_include_directories (sfizz_shared PUBLIC "${AAP_INCLUDE_DIR}")
-+        target_link_directories (sfizz_shared PUBLIC "${AAP_REF_LIB_DIR}")
-+        target_link_libraries(sfizz_shared PRIVATE android androidaudioplugin)
-+    endif()
-     if (WIN32)
-         target_compile_definitions (sfizz_shared PRIVATE _USE_MATH_DEFINES)
-     endif()
