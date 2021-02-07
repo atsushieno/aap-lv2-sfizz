@@ -5,7 +5,6 @@ all: build-all
 
 build-all: \
 	build-aap-lv2 \
-	get-sfizz-deps \
 	patch-sfizz \
 	build-java
 
@@ -20,18 +19,9 @@ external/sfizz/patch.stamp:
 
 get-sfizz-deps: dependencies/sfizz-deps/dist/stamp
 
-dependencies/sfizz-deps/dist/stamp: android-libsndfile-binaries.zip androidaudioplugin-debug.aar
-	unzip android-libsndfile-binaries.zip -d dependencies/sfizz-deps/
+dependencies/sfizz-deps/dist/stamp: androidaudioplugin-debug.aar
 	unzip androidaudioplugin-debug.aar -d dependencies/androidaudioplugin-aar
-	./rewrite-pkg-config-paths.sh sfizz-deps
-	for a in $(ABIS_SIMPLE) ; do \
-		mkdir -p aap-sfizz/src/main/jniLibs/$$a ; \
-		cp -R dependencies/sfizz-deps/dist/$$a/lib/*.so aap-sfizz/src/main/jniLibs/$$a ; \
-	done
 	touch dependencies/sfizz-deps/dist/stamp
-
-android-libsndfile-binaries.zip:
-	wget https://github.com/atsushieno/android-native-audio-builders/releases/download/r8.3/android-libsndfile-binaries.zip
 
 androidaudioplugin-debug.aar:
 	wget https://github.com/atsushieno/android-audio-plugin-framework/releases/download/v0.5.5/androidaudioplugin-debug.aar
