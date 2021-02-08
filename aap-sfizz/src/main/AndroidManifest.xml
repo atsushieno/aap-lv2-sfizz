@@ -33,6 +33,10 @@
                 android:name="org.androidaudioplugin.AudioPluginService#Extensions"
                 android:value="org.androidaudioplugin.lv2.AudioPluginLV2ServiceExtension"
                 />
+            <meta-data
+                android:name="org.androidaudioplugin.lv2.AudioPluginLV2ServiceExtension#ResourceFromFile"
+                android:value="true"
+                />
         </service>
     </application>
 </manifest>
