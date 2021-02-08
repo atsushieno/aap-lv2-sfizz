@@ -25,6 +25,6 @@ The dependency Android binaries for libsndfile are built from [android-native-au
 
 LV2 (repository for the headers) is under the ISC license.
 
-`sfizz` is distributed under the MIT license, but it has dependencies that are under LGPL2.1, Apache License 2.0, and so on. See [the project repository](https://github.com/sfztools/sfizz) for details.
+`sfizz` is distributed under the MIT license, but it has dependencies that are under the Apache License 2.0 etc. See [the project repository](https://github.com/sfztools/sfizz) for details. As of v0.1.6, aap-sfizz does not depend on libsndfile anymore.
 
 The entire plugin application bundles `androidaudioplugin-lv2` AAR module from `aap-lv2`, and `androidaudioplugin` AAR module, and is packaged into one application.
