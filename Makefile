@@ -33,3 +33,9 @@ build-aap-lv2:
 
 build-java:
 	ANDROID_SDK_ROOT=$(ANDROID_SDK_ROOT) ./gradlew build
+
+## update AAP metadata
+
+update-metadata:
+	cd external/aap-lv2 && make build-lv2-importer
+	external/aap-lv2/tools/aap-import-lv2-metadata/build/aap-import-lv2-metadata aap-sfizz/src/main/assets/lv2 aap-sfizz/src/main/res/xml
