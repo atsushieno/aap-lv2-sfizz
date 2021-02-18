@@ -10,7 +10,7 @@ android {
         minSdkVersion 29
         targetSdkVersion 30
         versionCode 1
-        versionName "0.1.6"
+        versionName "0.1.7"
 
         externalNativeBuild {
             cmake {
@@ -59,8 +59,8 @@ android {
 }
 
 dependencies {
-    implementation 'org.androidaudioplugin:androidaudioplugin-lv2:0.1.6'
-    implementation 'org.androidaudioplugin:androidaudioplugin-ui-traditional:0.6.5'
+    implementation 'org.androidaudioplugin:androidaudioplugin-lv2:0.1.7'
+    implementation 'org.androidaudioplugin:androidaudioplugin-ui-traditional:0.6.6'
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
     testImplementation 'junit:junit:4.13.1'
