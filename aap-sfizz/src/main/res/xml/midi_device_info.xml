@@ -1,0 +1,6 @@
+<devices>
+    <device name="aap-sfizz" manufacturer="androidaudioplugin.org" product="aap-sfizz">
+        <input-port name="input" />
+    </device>
+</devices>
+
