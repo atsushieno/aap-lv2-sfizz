@@ -49,6 +49,11 @@ jobs:
         echo y | sudo apt-get install doxygen libgrpc++-dev libgrpc-dev libprotobuf-dev graphviz cmake ninja-build liblilv-dev
     - name: stupid NDK setup workaround for GitHub Actions
       run: sudo chmod 777 /usr/local/lib/android/sdk/ && mkdir -p /usr/local/lib/android/sdk/ndk
+    - name: create local.properties
+      run: |
+        echo "cmake.dir=/usr" > local.properties
+        cp local.properties external/aap-lv2
+        cp local.properties external/aap-lv2/dependencies/android-audio-plugin-framework/java/local.properties
     - name: build
       run: make
     - name: upload artifact
@@ -61,6 +66,7 @@ jobs:
   osx-init:
     name: init on osx
     runs-on: macos-10.15
+    if: false
     outputs:
       skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
       skip-not: ${{ steps.ci-skip-step.outputs.ci-skip-not }}
@@ -75,7 +81,8 @@ jobs:
     name: build on osx
     runs-on: macos-10.15
     needs: osx-init
-    if: ${{ needs.osx-init.outputs.skip == 'false' }}
+    #if: ${{ needs.osx-init.outputs.skip == 'false' }}
+    if: false
     steps:
     - name: checkout
       uses: actions/checkout@v1
