@@ -63,10 +63,12 @@ android {
 }
 
 dependencies {
-    implementation 'org.androidaudioplugin:androidaudioplugin-lv2:0.1.13'
-    implementation 'org.androidaudioplugin:androidaudioplugin-ui-traditional:0.6.12'
+    implementation 'org.androidaudioplugin:androidaudioplugin:0.6.12'
+    implementation 'org.androidaudioplugin:androidaudioplugin-ui-compose:0.6.12'
     implementation 'org.androidaudioplugin:androidaudioplugin-midi-device-service:0.6.12'
+    implementation 'org.androidaudioplugin:androidaudioplugin-lv2:0.1.13'
     implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.startup:startup-runtime:1.1.0-beta01'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
