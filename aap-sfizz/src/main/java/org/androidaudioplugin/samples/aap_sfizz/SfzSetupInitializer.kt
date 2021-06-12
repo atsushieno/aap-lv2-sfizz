@@ -34,10 +34,10 @@ class SfzSetupInitializer : Initializer<Any?> {
 
     override fun create(context: Context): Any {
         // comment out these lines if you want to erase cached content.
-        if (File(context.dataDir, "lv2").exists())
+        if (File(context.filesDir, "lv2").exists())
             return ""
 
-        xcopyFromAssetsToLocalStorage(context, File(context.dataDir, "lv2"), "lv2")
+        xcopyFromAssetsToLocalStorage(context, File(context.filesDir, "lv2"), "lv2")
         return ""
     }
 
