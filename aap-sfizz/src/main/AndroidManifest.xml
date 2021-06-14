@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="org.androidaudioplugin.samples.aap_sfizz">
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <application
         android:requestLegacyExternalStorage="true"

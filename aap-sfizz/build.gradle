@@ -10,7 +10,7 @@ android {
         minSdkVersion 29
         targetSdkVersion 30
         versionCode 1
-        versionName "0.1.15"
+        versionName "0.1.16"
 
         externalNativeBuild {
             cmake {
@@ -49,29 +49,18 @@ android {
     aaptOptions {
         noCompress 'wav'
     }
-
-    // AGP, Android Lint, and/or appcompat package is stupid and results in their own error to block our builds.
-    // > androidx.appcompat.AppCompatIssueRegistry in /home/runner/.gradle/caches/transforms-2/files-2.1/2dfc7e2f9c4e61e976acb8f06b4a9014/appcompat-1.2.0/jars/lint.jar does not specify a vendor; see IssueRegistry#vendor
-    // This is a suggested workaround (by AGP or Gradle)
-    lintOptions {
-        abortOnError false
-    }
-
-    packagingOptions {
-        //doNotStrip "*/*/*.so" // debuggable!
-    }
 }
 
 dependencies {
-    implementation 'org.androidaudioplugin:androidaudioplugin:0.6.15'
-    implementation 'org.androidaudioplugin:androidaudioplugin-ui-compose:0.6.15'
-    implementation 'org.androidaudioplugin:androidaudioplugin-midi-device-service:0.6.15'
-    implementation 'org.androidaudioplugin:androidaudioplugin-lv2:0.1.15'
+    implementation 'org.androidaudioplugin:androidaudioplugin:0.6.16'
+    implementation 'org.androidaudioplugin:androidaudioplugin-ui-compose:0.6.16'
+    implementation 'org.androidaudioplugin:androidaudioplugin-midi-device-service:0.6.16'
+    implementation 'org.androidaudioplugin:androidaudioplugin-lv2:0.1.16'
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'androidx.startup:startup-runtime:1.1.0-beta01'
 
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'org.androidaudioplugin:androidaudioplugin-testing:0.6.15'
+    androidTestImplementation 'org.androidaudioplugin:androidaudioplugin-testing:0.6.16'
     androidTestImplementation 'androidx.test:rules:1.3.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
 }
