@@ -65,45 +65,12 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
 }
 
-task copyLv2Manifests(type: Copy) {
-    from(".cxx/cmake/debug/x86/sfizz.lv2") {
-        exclude '**/*.so'
-    }
-    into 'src/main/assets/lv2/sfizz.lv2'
-}
-
-// I don't know if there is any better scripting approach in build.gradle, not sure if I will learn that before migrating to build.gradle.kts...
-task copyLV2SharedX86DebugLibs(type: Copy) { from(".cxx/cmake/debug/x86/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/x86' }
-task copyLV2SharedX64DebugLibs(type: Copy) { from(".cxx/cmake/debug/x86_64/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/x86_64' }
-task copyLV2SharedArm32DebugLibs(type: Copy) { from(".cxx/cmake/debug/armeabi-v7a/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/armeabi-v7a' }
-task copyLV2SharedArm64DebugLibs(type: Copy) { from(".cxx/cmake/debug/arm64-v8a/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/arm64-v8a' }
-task copyLV2SharedX86ReleaseLibs(type: Copy) { from(".cxx/cmake/release/x86/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/x86' }
-task copyLV2SharedX64ReleaseLibs(type: Copy) { from(".cxx/cmake/release/x86_64/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/x86_64' }
-task copyLV2SharedArm32ReleaseLibs(type: Copy) { from(".cxx/cmake/release/armeabi-v7a/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/armeabi-v7a' }
-task copyLV2SharedArm64ReleaseLibs(type: Copy) { from(".cxx/cmake/release/arm64-v8a/sfizz.lv2") { include '**/*.so' } into 'src/main/jniLibs/arm64-v8a' }
 
 task deleteLV2Manifests(type: Delete) {
     delete 'src/main/assets/lv2/sfizz.lv2'
 }
 
 tasks.whenTaskAdded { task ->
-    if (task.name == "packageDebug") {
-        task.dependsOn copyLV2SharedX86DebugLibs
-        task.dependsOn copyLV2SharedX64DebugLibs
-        task.dependsOn copyLV2SharedArm32DebugLibs
-        task.dependsOn copyLV2SharedArm64DebugLibs
-    }
-    if (task.name == "packageRelease") {
-        task.dependsOn copyLV2SharedX86ReleaseLibs
-        task.dependsOn copyLV2SharedX64ReleaseLibs
-        task.dependsOn copyLV2SharedArm32ReleaseLibs
-        task.dependsOn copyLV2SharedArm64ReleaseLibs
-    }
-}
-
-tasks.whenTaskAdded { task ->
-    if (task.name == "packageDebug" || task.name == "packageRelease")
-        task.dependsOn copyLv2Manifests
     // FIXME: it's hacky, but `clean` didn't work.
     if (task.name == "externalNativeBuildCleanDebug" || task.name == "externalNativeBuildCleanRelease")
         task.dependsOn deleteLV2Manifests
