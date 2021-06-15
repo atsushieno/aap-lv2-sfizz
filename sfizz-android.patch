@@ -22,7 +22,7 @@ index 3dcb1916..42c677c2 100644
          if(SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
 diff --git a/lv2/CMakeLists.txt b/lv2/CMakeLists.txt
-index 39c447ec..0efdd27c 100644
+index 39c447ec..9f7602a2 100644
 --- a/lv2/CMakeLists.txt
 +++ b/lv2/CMakeLists.txt
 @@ -60,12 +60,12 @@ endif()
@@ -40,7 +40,7 @@ index 39c447ec..0efdd27c 100644
  endif()
  
  # Generate *.ttl files from *.in sources,
-@@ -106,9 +106,9 @@ if(NOT MSVC)
+@@ -106,9 +106,21 @@ if(NOT MSVC)
      install(DIRECTORY ${PROJECT_BINARY_DIR} DESTINATION ${LV2PLUGIN_INSTALL_DIR}
          COMPONENT "lv2")
      bundle_dylibs(lv2
@@ -52,6 +52,18 @@ index 39c447ec..0efdd27c 100644
 +        "${LV2PLUGIN_INSTALL_DIR}/${PROJECT_NAME}.lv2/sfizz_ui.so"
          COMPONENT "lv2")
  endif()
++
++
++# Android additional copying
++
++add_custom_command(
++        TARGET ${LV2PLUGIN_PRJ_NAME}
++        POST_BUILD
++        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/"
++        COMMAND cp -R "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/"
++        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
++        COMMAND mv "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/sfizz.lv2/sfizz.so" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
++    )
 diff --git a/lv2/manifest.ttl.in b/lv2/manifest.ttl.in
 index ab407d33..d6832c0e 100644
 --- a/lv2/manifest.ttl.in
