@@ -7,3 +7,6 @@
 [submodule "external/lv2"]
 	path = external/lv2
 	url = https://github.com/lv2/lv2.git
+[submodule "external/SplendidGrandPiano"]
+	path = external/SplendidGrandPiano
+	url = https://github.com/sfzinstruments/SplendidGrandPiano.git

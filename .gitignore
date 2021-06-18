@@ -6,6 +6,7 @@ local.properties
 build
 
 aap-sfizz/src/main/jniLibs/
+aap-sfizz/src/main/cpp
 
 android-libsndfile-binaries.zip
 androidaudioplugin-debug.aar

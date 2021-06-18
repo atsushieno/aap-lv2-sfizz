@@ -9,6 +9,10 @@ build-all: \
 	build-java
 
 patch-sfizz: external/sfizz/patch.stamp
+	if [ ! -L aap-sfizz/src/main/cpp ] ; then \
+	cd aap-sfizz/src/main && ln -s ../../../external/sfizz cpp ; \
+	else echo "symlink already exists" ; \
+	fi
 
 external/sfizz/patch.stamp:
 	cd external/sfizz && \

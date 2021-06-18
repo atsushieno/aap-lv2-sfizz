@@ -22,7 +22,7 @@ index 3dcb1916..42c677c2 100644
          if(SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
 diff --git a/lv2/CMakeLists.txt b/lv2/CMakeLists.txt
-index 39c447ec..0f3fc900 100644
+index 39c447ec..41cadc54 100644
 --- a/lv2/CMakeLists.txt
 +++ b/lv2/CMakeLists.txt
 @@ -60,12 +60,12 @@ endif()
@@ -40,7 +40,7 @@ index 39c447ec..0f3fc900 100644
  endif()
  
  # Generate *.ttl files from *.in sources,
-@@ -106,9 +106,21 @@ if(NOT MSVC)
+@@ -106,9 +106,22 @@ if(NOT MSVC)
      install(DIRECTORY ${PROJECT_BINARY_DIR} DESTINATION ${LV2PLUGIN_INSTALL_DIR}
          COMPONENT "lv2")
      bundle_dylibs(lv2
@@ -62,7 +62,8 @@ index 39c447ec..0f3fc900 100644
 +        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2"
 +        COMMAND cp -R "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2/"
 +        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
-+        #COMMAND mv "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/sfizz.lv2/sfizz.so" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
++        COMMAND mv "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/sfizz.so" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
++        COMMAND cp -R "${CMAKE_CURRENT_LIST_DIR}/../../../external/SplendidGrandPiano" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/Contents/Resources/"
 +    )
 diff --git a/lv2/manifest.ttl.in b/lv2/manifest.ttl.in
 index ab407d33..d6832c0e 100644
@@ -81,3 +82,17 @@ index ab407d33..d6832c0e 100644
 -@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <Contents/Binary/@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
+diff --git a/lv2/sfizz.c b/lv2/sfizz.c
+index 115fea48..2376618a 100644
+--- a/lv2/sfizz.c
++++ b/lv2/sfizz.c
+@@ -76,7 +76,8 @@
+ #define UNUSED(x) (void)(x)
+ 
+ #define DEFAULT_SCALA_FILE  "Contents/Resources/DefaultScale.scl"
+-#define DEFAULT_SFZ_FILE    "Contents/Resources/DefaultInstrument.sfz"
++//#define DEFAULT_SFZ_FILE    "Contents/Resources/DefaultInstrument.sfz"
++#define DEFAULT_SFZ_FILE    "Contents/Resources/SplendidGrandPiano/Splendid Grand Piano.sfz"
+ // This assumes that the longest path is the default sfz file; if not, change it
+ #define MAX_BUNDLE_PATH_SIZE (MAX_PATH_SIZE - sizeof(DEFAULT_SFZ_FILE))
+ 
