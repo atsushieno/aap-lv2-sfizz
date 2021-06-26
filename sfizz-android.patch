@@ -1,8 +1,8 @@
 diff --git a/cmake/SfizzDeps.cmake b/cmake/SfizzDeps.cmake
-index 3dcb1916..42c677c2 100644
+index fbf5f8e0..59fe6c47 100644
 --- a/cmake/SfizzDeps.cmake
 +++ b/cmake/SfizzDeps.cmake
-@@ -45,8 +45,18 @@ if(SFIZZ_USE_SNDFILE OR SFIZZ_DEMOS OR SFIZZ_BENCHMARKS OR SFIZZ_RENDER)
+@@ -79,8 +79,18 @@ if(SFIZZ_USE_SNDFILE OR SFIZZ_DEMOS OR SFIZZ_DEVTOOLS OR SFIZZ_BENCHMARKS)
          target_include_directories(sfizz_sndfile INTERFACE "${SNDFILE_INCLUDE_DIR}")
          target_link_libraries(sfizz_sndfile INTERFACE SndFile::sndfile)
      else()
@@ -21,11 +21,11 @@ index 3dcb1916..42c677c2 100644
          target_include_directories(sfizz_sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
          if(SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
-diff --git a/lv2/CMakeLists.txt b/lv2/CMakeLists.txt
-index 39c447ec..41cadc54 100644
---- a/lv2/CMakeLists.txt
-+++ b/lv2/CMakeLists.txt
-@@ -60,12 +60,12 @@ endif()
+diff --git a/plugins/lv2/CMakeLists.txt b/plugins/lv2/CMakeLists.txt
+index 18305a32..46b43dd8 100644
+--- a/plugins/lv2/CMakeLists.txt
++++ b/plugins/lv2/CMakeLists.txt
+@@ -72,12 +72,12 @@ endif()
  # <build_dir>/lv2/<plugin_name>.lv2/<plugin_name>.<ext>
  set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES PREFIX "")
  set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
@@ -40,7 +40,7 @@ index 39c447ec..41cadc54 100644
  endif()
  
  # Generate *.ttl files from *.in sources,
-@@ -106,9 +106,22 @@ if(NOT MSVC)
+@@ -122,9 +122,22 @@ if(NOT MSVC)
      install(DIRECTORY ${PROJECT_BINARY_DIR} DESTINATION ${LV2PLUGIN_INSTALL_DIR}
          COMPONENT "lv2")
      bundle_dylibs(lv2
@@ -59,40 +59,40 @@ index 39c447ec..41cadc54 100644
 +add_custom_command(
 +        TARGET ${LV2PLUGIN_PRJ_NAME}
 +        POST_BUILD
-+        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2"
-+        COMMAND cp -R "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2/"
-+        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
-+        COMMAND mv "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/sfizz.so" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
-+        COMMAND cp -R "${CMAKE_CURRENT_LIST_DIR}/../../../external/SplendidGrandPiano" "${CMAKE_CURRENT_LIST_DIR}/../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/Contents/Resources/"
++        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2"
++        COMMAND cp -R "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/"
++        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
++        COMMAND mv "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/sfizz.so" "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
++        COMMAND cp -R "${CMAKE_CURRENT_LIST_DIR}/../../../../external/SplendidGrandPiano" "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/Contents/Resources/"
 +    )
-diff --git a/lv2/manifest.ttl.in b/lv2/manifest.ttl.in
-index ab407d33..d6832c0e 100644
---- a/lv2/manifest.ttl.in
-+++ b/lv2/manifest.ttl.in
+diff --git a/plugins/lv2/manifest.ttl.in b/plugins/lv2/manifest.ttl.in
+index 3c5a130c..a78231f1 100644
+--- a/plugins/lv2/manifest.ttl.in
++++ b/plugins/lv2/manifest.ttl.in
 @@ -4,10 +4,10 @@
  
  <@LV2PLUGIN_URI@>
    a lv2:Plugin ;
 -  lv2:binary <Contents/Binary/@PROJECT_NAME@@CMAKE_SHARED_MODULE_SUFFIX@> ;
 +  lv2:binary <@PROJECT_NAME@@CMAKE_SHARED_MODULE_SUFFIX@> ;
-   rdfs:seeAlso <@PROJECT_NAME@.ttl> .
+   rdfs:seeAlso <@PROJECT_NAME@.ttl>, <controllers.ttl> .
  
  @LV2PLUGIN_IF_ENABLE_UI@<@LV2PLUGIN_URI@#ui>
  @LV2PLUGIN_IF_ENABLE_UI@    a ui:@LV2_UI_TYPE@ ;
 -@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <Contents/Binary/@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
-diff --git a/lv2/sfizz.c b/lv2/sfizz.c
-index 115fea48..2376618a 100644
---- a/lv2/sfizz.c
-+++ b/lv2/sfizz.c
-@@ -76,7 +76,8 @@
- #define UNUSED(x) (void)(x)
+diff --git a/plugins/lv2/sfizz_lv2_plugin.h b/plugins/lv2/sfizz_lv2_plugin.h
+index 90387684..f6945c42 100644
+--- a/plugins/lv2/sfizz_lv2_plugin.h
++++ b/plugins/lv2/sfizz_lv2_plugin.h
+@@ -19,7 +19,8 @@
+ #include <mutex>
  
  #define DEFAULT_SCALA_FILE  "Contents/Resources/DefaultScale.scl"
 -#define DEFAULT_SFZ_FILE    "Contents/Resources/DefaultInstrument.sfz"
-+//#define DEFAULT_SFZ_FILE    "Contents/Resources/DefaultInstrument.sfz"
 +#define DEFAULT_SFZ_FILE    "Contents/Resources/SplendidGrandPiano/Splendid Grand Piano.sfz"
++
  // This assumes that the longest path is the default sfz file; if not, change it
  #define MAX_BUNDLE_PATH_SIZE (MAX_PATH_SIZE - sizeof(DEFAULT_SFZ_FILE))
  
