@@ -1,7 +1,7 @@
 <plugins xmlns="urn:org.androidaudioplugin.core" xmlns:pp="urn:org.androidaudioplugin.port">
   <plugin backend="LV2" name="sfizz" category="Instrument" author="SFZTools" manufacturer="" unique-id="lv2:http://sfztools.github.io/sfizz" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" assets="/lv2/sfizz.lv2/">
     <ports>
-      <port direction="input"     content="midi2" name="Control" />
+      <port direction="input"     content="midi" name="Control" />
       <port direction="output"     content="other" name="Notify" />
       <port direction="output"     content="audio" name="Left Output" />
       <port direction="output"     content="audio" name="Right Output" />

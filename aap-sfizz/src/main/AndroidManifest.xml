@@ -37,7 +37,7 @@
                 android:value="true"
                 />
         </service>
-        <service android:name="org.androidaudioplugin.midideviceservice.AudioPluginMidiDeviceService"
+        <service android:name="org.androidaudioplugin.midideviceservice.StandaloneAudioPluginMidiDeviceService"
             android:permission="android.permission.BIND_MIDI_DEVICE_SERVICE"
             android:exported="true">
             <intent-filter>
