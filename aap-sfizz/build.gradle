@@ -26,6 +26,7 @@ android {
         debug {
             packagingOptions {
                 doNotStrip "**/*.so"
+                pickFirst "**/sfizz.so"
             }
         }
         release {
