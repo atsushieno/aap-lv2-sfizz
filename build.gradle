@@ -2,16 +2,18 @@
 
 buildscript {
     ext.kotlin_version = '1.6.10'
-    ext.aap_version = '0.6.23'
-    ext.aap_lv2_version = '0.1.22'
+    ext.aap_version = '0.6.26'
+    ext.aap_lv2_version = '0.1.24'
     ext.compose_version = '1.1.0'
+    ext.ndk_version = '21.4.7075529'
+    ext.enable_asan = false
 
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0-alpha02'
+        classpath 'com.android.tools.build:gradle:7.3.0-alpha03'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
