@@ -1,8 +1,8 @@
 diff --git a/cmake/SfizzDeps.cmake b/cmake/SfizzDeps.cmake
-index fbf5f8e0..59fe6c47 100644
+index 44a87134..d81bbf0c 100644
 --- a/cmake/SfizzDeps.cmake
 +++ b/cmake/SfizzDeps.cmake
-@@ -79,8 +79,18 @@ if(SFIZZ_USE_SNDFILE OR SFIZZ_DEMOS OR SFIZZ_DEVTOOLS OR SFIZZ_BENCHMARKS)
+@@ -91,8 +91,18 @@ if(SFIZZ_USE_SNDFILE OR SFIZZ_DEMOS OR SFIZZ_DEVTOOLS OR SFIZZ_BENCHMARKS)
          target_include_directories(sfizz_sndfile INTERFACE "${SNDFILE_INCLUDE_DIR}")
          target_link_libraries(sfizz_sndfile INTERFACE SndFile::sndfile)
      else()
@@ -21,11 +21,32 @@ index fbf5f8e0..59fe6c47 100644
          target_include_directories(sfizz_sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
          if(SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
+diff --git a/external/abseil-cpp b/external/abseil-cpp
+index 21510581..997aaf3a 160000
+--- a/external/abseil-cpp
++++ b/external/abseil-cpp
+@@ -1 +1 @@
+-Subproject commit 215105818dfde3174fe799600bb0f3cae233d0bf
++Subproject commit 997aaf3a28308eba1b9156aa35ab7bca9688e9f6
+diff --git a/external/filesystem b/external/filesystem
+index 614bbe87..7bc5c173 160000
+--- a/external/filesystem
++++ b/external/filesystem
+@@ -1 +1 @@
+-Subproject commit 614bbe87b80435d87ab8791564370e0c1d13627d
++Subproject commit 7bc5c17305fe70518ca72162e244af1d12455a91
+diff --git a/plugins/editor/external/vstgui4 b/plugins/editor/external/vstgui4
+index 7ea1407d..c1d411b8 160000
+--- a/plugins/editor/external/vstgui4
++++ b/plugins/editor/external/vstgui4
+@@ -1 +1 @@
+-Subproject commit 7ea1407dd48e13c533bea575d8539fd8d5a28493
++Subproject commit c1d411b86c42ef0502a10509d540999f3e617252
 diff --git a/plugins/lv2/CMakeLists.txt b/plugins/lv2/CMakeLists.txt
-index 18305a32..46b43dd8 100644
+index 48924d78..8f7a8139 100644
 --- a/plugins/lv2/CMakeLists.txt
 +++ b/plugins/lv2/CMakeLists.txt
-@@ -72,12 +72,12 @@ endif()
+@@ -74,12 +74,12 @@ endif()
  # <build_dir>/lv2/<plugin_name>.lv2/<plugin_name>.<ext>
  set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES PREFIX "")
  set_target_properties(${LV2PLUGIN_PRJ_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
@@ -41,8 +62,8 @@ index 18305a32..46b43dd8 100644
  
  # Generate *.ttl files from *.in sources,
 @@ -122,9 +122,22 @@ if(NOT MSVC)
-     install(DIRECTORY ${PROJECT_BINARY_DIR} DESTINATION ${LV2PLUGIN_INSTALL_DIR}
-         COMPONENT "lv2")
+         COMPONENT "lv2"
+         USE_SOURCE_PERMISSIONS)
      bundle_dylibs(lv2
 -        "${LV2PLUGIN_INSTALL_DIR}/${PROJECT_NAME}.lv2/Contents/Binary/sfizz.so"
 +        "${LV2PLUGIN_INSTALL_DIR}/${PROJECT_NAME}.lv2/sfizz.so"
@@ -66,12 +87,12 @@ index 18305a32..46b43dd8 100644
 +        COMMAND cp -R "${CMAKE_CURRENT_LIST_DIR}/../../../../external/SplendidGrandPiano" "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/Contents/Resources/"
 +    )
 diff --git a/plugins/lv2/manifest.ttl.in b/plugins/lv2/manifest.ttl.in
-index 3c5a130c..a78231f1 100644
+index 37305afd..c06d359d 100644
 --- a/plugins/lv2/manifest.ttl.in
 +++ b/plugins/lv2/manifest.ttl.in
-@@ -4,10 +4,10 @@
+@@ -9,10 +9,10 @@
  
- <@LV2PLUGIN_URI@>
+ <@LV2PLUGIN_URI@-multi>
    a lv2:Plugin ;
 -  lv2:binary <Contents/Binary/@PROJECT_NAME@@CMAKE_SHARED_MODULE_SUFFIX@> ;
 +  lv2:binary <@PROJECT_NAME@@CMAKE_SHARED_MODULE_SUFFIX@> ;
@@ -83,7 +104,7 @@ index 3c5a130c..a78231f1 100644
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
 diff --git a/plugins/lv2/sfizz_lv2_plugin.h b/plugins/lv2/sfizz_lv2_plugin.h
-index 90387684..f6945c42 100644
+index e6722397..e950e35e 100644
 --- a/plugins/lv2/sfizz_lv2_plugin.h
 +++ b/plugins/lv2/sfizz_lv2_plugin.h
 @@ -19,7 +19,8 @@
