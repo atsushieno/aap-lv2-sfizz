@@ -14,6 +14,7 @@ android {
 
         externalNativeBuild {
             cmake {
+                version "3.18.1"
                 arguments "-DSFIZZ_USE_SNDFILE=0", "-DENABLE_LTO=off", "-DSFIZZ_VST=off", "-DSFIZZ_LV2_UI=off", "-DSFIZZ_JACK=off", "-DSFIZZ_RENDER=off", "-DSFIZZ_SHARED=off", "-DANDROID_STL=c++_shared", "-DAAP_ENABLE_ASAN=" + (enable_asan ? "1" : "0")
             }
         }
