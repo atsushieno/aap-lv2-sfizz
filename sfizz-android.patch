@@ -21,27 +21,6 @@ index 44a87134..d81bbf0c 100644
          target_include_directories(sfizz_sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
          if(SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
-diff --git a/external/abseil-cpp b/external/abseil-cpp
-index 21510581..997aaf3a 160000
---- a/external/abseil-cpp
-+++ b/external/abseil-cpp
-@@ -1 +1 @@
--Subproject commit 215105818dfde3174fe799600bb0f3cae233d0bf
-+Subproject commit 997aaf3a28308eba1b9156aa35ab7bca9688e9f6
-diff --git a/external/filesystem b/external/filesystem
-index 614bbe87..7bc5c173 160000
---- a/external/filesystem
-+++ b/external/filesystem
-@@ -1 +1 @@
--Subproject commit 614bbe87b80435d87ab8791564370e0c1d13627d
-+Subproject commit 7bc5c17305fe70518ca72162e244af1d12455a91
-diff --git a/plugins/editor/external/vstgui4 b/plugins/editor/external/vstgui4
-index 7ea1407d..c1d411b8 160000
---- a/plugins/editor/external/vstgui4
-+++ b/plugins/editor/external/vstgui4
-@@ -1 +1 @@
--Subproject commit 7ea1407dd48e13c533bea575d8539fd8d5a28493
-+Subproject commit c1d411b86c42ef0502a10509d540999f3e617252
 diff --git a/plugins/lv2/CMakeLists.txt b/plugins/lv2/CMakeLists.txt
 index 48924d78..8f7a8139 100644
 --- a/plugins/lv2/CMakeLists.txt
