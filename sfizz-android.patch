@@ -103,6 +103,19 @@ index 37305afd..c06d359d 100644
 -@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <Contents/Binary/@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
+diff --git a/plugins/lv2/sfizz.ttl.in b/plugins/lv2/sfizz.ttl.in
+index a72340aa..e4c6d8b8 100644
+--- a/plugins/lv2/sfizz.ttl.in
++++ b/plugins/lv2/sfizz.ttl.in
+@@ -449,7 +449,7 @@ midnam:update a lv2:Feature .
+ <@LV2PLUGIN_URI@-multi>
+   a doap:Project, lv2:Plugin, lv2:InstrumentPlugin ;
+ 
+-  doap:name "@LV2PLUGIN_NAME@" ;
++  doap:name "@LV2PLUGIN_NAME@-multi" ;
+   doap:license <https://spdx.org/licenses/@LV2PLUGIN_SPDX_LICENSE_ID@> ;
+   doap:maintainer [
+     foaf:name     "@LV2PLUGIN_AUTHOR@" ;
 diff --git a/plugins/lv2/sfizz_lv2_plugin.h b/plugins/lv2/sfizz_lv2_plugin.h
 index e6722397..e950e35e 100644
 --- a/plugins/lv2/sfizz_lv2_plugin.h
