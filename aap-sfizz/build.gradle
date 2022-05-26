@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 32
 
     defaultConfig {
-        minSdkVersion 29
-        targetSdkVersion 31
+        minSdkVersion 30
+        targetSdkVersion 32
         versionCode 1
         versionName "$aap_lv2_version"
 
@@ -50,6 +50,9 @@ android {
     aaptOptions {
         noCompress 'wav'
     }
+    packagingOptions {
+        jniLibs.useLegacyPackaging = enable_asan
+    }
 }
 
 dependencies {
@@ -57,8 +60,8 @@ dependencies {
     implementation "org.androidaudioplugin:androidaudioplugin-ui-compose:$aap_version"
     implementation "org.androidaudioplugin:androidaudioplugin-midi-device-service:$aap_version"
     implementation "org.androidaudioplugin:androidaudioplugin-lv2:$aap_lv2_version"
-    implementation 'androidx.appcompat:appcompat:1.4.0'
-    implementation 'androidx.startup:startup-runtime:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'androidx.startup:startup-runtime:1.1.1'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation "org.androidaudioplugin:androidaudioplugin-testing:$aap_version"
