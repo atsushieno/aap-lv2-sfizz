@@ -40,12 +40,9 @@ android {
             path "../external/sfizz/CMakeLists.txt"
         }
     }
-    // FIXME: enable these sections once we migrated to prefab.
-    /*
     buildFeatures {
         prefab true
     }
-    */
 
     aaptOptions {
         noCompress 'wav'
@@ -60,7 +57,7 @@ dependencies {
     implementation "org.androidaudioplugin:androidaudioplugin-ui-compose:$aap_version"
     implementation "org.androidaudioplugin:androidaudioplugin-midi-device-service:$aap_version"
     implementation "org.androidaudioplugin:androidaudioplugin-lv2:$aap_lv2_version"
-    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'androidx.startup:startup-runtime:1.1.1'
 
     testImplementation 'junit:junit:4.13.2'
