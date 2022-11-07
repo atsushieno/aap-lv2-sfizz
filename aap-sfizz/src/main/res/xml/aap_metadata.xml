@@ -1,110 +1,121 @@
 <plugins xmlns="urn:org.androidaudioplugin.core" xmlns:pp="urn:org.androidaudioplugin.port">
   <plugin backend="LV2" name="sfizz" category="Instrument" author="SFZTools" manufacturer="" unique-id="lv2:http://sfztools.github.io/sfizz" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" assets="/lv2/sfizz.lv2/">
+    <parameters xmlns='urn://androidaudioplugin.org/extensions/parameters'>
+      <parameter id="0" name="Control"     />
+      <parameter id="1" name="Automate"     />
+      <parameter id="4" name="Volume" default="0.000000" minimum="-80.000000" maximum="6.000000"  />
+      <parameter id="5" name="Polyphony" default="64" minimum="8" maximum="256" type="integer">
+        <enumeration label="32 voices" value="32" />
+        <enumeration label="64 voices" value="64" />
+        <enumeration label="128 voices" value="128" />
+        <enumeration label="256 voices" value="256" />
+        <enumeration label="8 voices" value="8" />
+        <enumeration label="16 voices" value="16" />
+      </parameter>
+      <parameter id="6" name="Oversampling factor" default="1" minimum="1" maximum="8" type="integer">
+        <enumeration label="x2 oversampling" value="2" />
+        <enumeration label="x4 oversampling" value="4" />
+        <enumeration label="x1 oversampling" value="1" />
+        <enumeration label="x8 oversampling" value="8" />
+      </parameter>
+      <parameter id="7" name="Preload size" default="8192" minimum="1024" maximum="65536" type="integer">
+        <enumeration label="4 KB" value="1024" />
+        <enumeration label="8 KB" value="2048" />
+        <enumeration label="16 KB" value="4096" />
+        <enumeration label="32 KB" value="8192" />
+        <enumeration label="64 KB" value="16384" />
+        <enumeration label="128 KB" value="32768" />
+        <enumeration label="256 KB" value="65536" />
+      </parameter>
+      <parameter id="8" name="Freewheeling" default="0"   type="toggled" />
+      <parameter id="9" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
+      <parameter id="10" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
+      <parameter id="11" name="Stretched tuning" default="0.000000" minimum="0.000000" maximum="1.000000"  />
+      <parameter id="12" name="Sample quality" default="2.000000" minimum="0.000000" maximum="10.000000"  />
+      <parameter id="13" name="Oscillator quality" default="1.000000" minimum="0.000000" maximum="3.000000"  />
+      <parameter id="14" name="Active voices" default="0" minimum="0" maximum="256" type="integer" />
+      <parameter id="15" name="Number of curves" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="16" name="Number of masters" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="17" name="Number of groups" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="18" name="Number of regions" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="19" name="Number of samples" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="20" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
+      <parameter id="21" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
+      <parameter id="22" name="Sustain cancels release" default="0"   type="toggled" />
+    </parameters>
     <ports>
-      <port direction="input"     content="midi" name="Control" />
-      <port direction="output"     content="other" name="Automate" pp:minimumSize="524288" />
-      <port direction="output"     content="audio" name="Left Output" />
-      <port direction="output"     content="audio" name="Right Output" />
-      <port direction="input" pp:default="0.000000" pp:minimum="-80.000000" pp:maximum="6.000000"  content="other" name="Volume" />
-      <port direction="input" pp:default="64" pp:minimum="8" pp:maximum="256" pp:type="integer" content="other" name="Polyphony">
-        <pp:enumeration label="32 voices" value="32" />
-        <pp:enumeration label="64 voices" value="64" />
-        <pp:enumeration label="128 voices" value="128" />
-        <pp:enumeration label="256 voices" value="256" />
-        <pp:enumeration label="8 voices" value="8" />
-        <pp:enumeration label="16 voices" value="16" />
-      </port>
-      <port direction="input" pp:default="1" pp:minimum="1" pp:maximum="8" pp:type="integer" content="other" name="Oversampling factor">
-        <pp:enumeration label="x2 oversampling" value="2" />
-        <pp:enumeration label="x4 oversampling" value="4" />
-        <pp:enumeration label="x1 oversampling" value="1" />
-        <pp:enumeration label="x8 oversampling" value="8" />
-      </port>
-      <port direction="input" pp:default="8192" pp:minimum="1024" pp:maximum="65536" pp:type="integer" content="other" name="Preload size">
-        <pp:enumeration label="4 KB" value="1024" />
-        <pp:enumeration label="8 KB" value="2048" />
-        <pp:enumeration label="16 KB" value="4096" />
-        <pp:enumeration label="32 KB" value="8192" />
-        <pp:enumeration label="64 KB" value="16384" />
-        <pp:enumeration label="128 KB" value="32768" />
-        <pp:enumeration label="256 KB" value="65536" />
-      </port>
-      <port direction="input" pp:default="0"   pp:type="toggled" content="other" name="Freewheeling" />
-      <port direction="input" pp:default="60" pp:minimum="0" pp:maximum="127" pp:type="integer" content="other" name="Scala root key" />
-      <port direction="input" pp:default="440.000000" pp:minimum="300.000000" pp:maximum="500.000000"  content="other" name="Tuning frequency" />
-      <port direction="input" pp:default="0.000000" pp:minimum="0.000000" pp:maximum="1.000000"  content="other" name="Stretched tuning" />
-      <port direction="input" pp:default="2.000000" pp:minimum="0.000000" pp:maximum="10.000000"  content="other" name="Sample quality" />
-      <port direction="input" pp:default="1.000000" pp:minimum="0.000000" pp:maximum="3.000000"  content="other" name="Oscillator quality" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="256" pp:type="integer" content="other" name="Active voices" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of curves" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of masters" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of groups" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of regions" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of samples" />
-      <port direction="input" pp:default="10.000000" pp:minimum="0.000000" pp:maximum="10.000000"  content="other" name="Freewheeling Sample quality" />
-      <port direction="input" pp:default="3.000000" pp:minimum="0.000000" pp:maximum="3.000000"  content="other" name="Freewheeling Oscillator quality" />
-      <port direction="input" pp:default="0"   pp:type="toggled" content="other" name="Sustain cancels release" />
+      <port direction='output' content='audio' name='Left Output' />
+      <port direction='output' content='audio' name='Right Output' />
+      <port direction='input' content='midi2' name='MIDI In' />
+      <port direction='output' content='midi2' name='MIDI Out' />
     </ports>
   </plugin>
+  <!-- FIXME: bring it back again once issue #7 is fixed -->
+  <!--
   <plugin backend="LV2" name="sfizz-multi" category="Instrument" author="SFZTools" manufacturer="" unique-id="lv2:http://sfztools.github.io/sfizz-multi" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" assets="/lv2/sfizz.lv2/">
+    <parameters xmlns='urn://androidaudioplugin.org/extensions/parameters'>
+      <parameter id="0" name="Control"     />
+      <parameter id="1" name="Automate"     />
+      <parameter id="18" name="Volume" default="0.000000" minimum="-80.000000" maximum="6.000000"  />
+      <parameter id="19" name="Polyphony" default="64" minimum="8" maximum="256" type="integer">
+        <enumeration label="8 voices" value="8" />
+        <enumeration label="16 voices" value="16" />
+        <enumeration label="32 voices" value="32" />
+        <enumeration label="64 voices" value="64" />
+        <enumeration label="128 voices" value="128" />
+        <enumeration label="256 voices" value="256" />
+      </parameter>
+      <parameter id="20" name="Oversampling factor" default="1" minimum="1" maximum="8" type="integer">
+        <enumeration label="x2 oversampling" value="2" />
+        <enumeration label="x4 oversampling" value="4" />
+        <enumeration label="x1 oversampling" value="1" />
+        <enumeration label="x8 oversampling" value="8" />
+      </parameter>
+      <parameter id="21" name="Preload size" default="8192" minimum="1024" maximum="65536" type="integer">
+        <enumeration label="4 KB" value="1024" />
+        <enumeration label="8 KB" value="2048" />
+        <enumeration label="16 KB" value="4096" />
+        <enumeration label="32 KB" value="8192" />
+        <enumeration label="64 KB" value="16384" />
+        <enumeration label="128 KB" value="32768" />
+        <enumeration label="256 KB" value="65536" />
+      </parameter>
+      <parameter id="22" name="Freewheeling" default="0"   type="toggled" />
+      <parameter id="23" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
+      <parameter id="24" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
+      <parameter id="25" name="Stretched tuning" default="0.000000" minimum="0.000000" maximum="1.000000"  />
+      <parameter id="26" name="Sample quality" default="2.000000" minimum="0.000000" maximum="10.000000"  />
+      <parameter id="27" name="Oscillator quality" default="1.000000" minimum="0.000000" maximum="3.000000"  />
+      <parameter id="28" name="Active voices" default="0" minimum="0" maximum="256" type="integer" />
+      <parameter id="29" name="Number of curves" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="30" name="Number of masters" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="31" name="Number of groups" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="32" name="Number of regions" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="33" name="Number of samples" default="0" minimum="0" maximum="65535" type="integer" />
+      <parameter id="34" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
+      <parameter id="35" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
+      <parameter id="36" name="Sustain cancels release" default="0"   type="toggled" />
+    </parameters>
     <ports>
-      <port direction="input"     content="midi" name="Control" />
-      <port direction="output"     content="other" name="Automate" />
-      <port direction="output"     content="audio" name="Output 1 Left" />
-      <port direction="output"     content="audio" name="Output 1 Right" />
-      <port direction="output"     content="audio" name="Output 2 Left" />
-      <port direction="output"     content="audio" name="Output 2 Right" />
-      <port direction="output"     content="audio" name="Output 3 Left" />
-      <port direction="output"     content="audio" name="Output 3 Right" />
-      <port direction="output"     content="audio" name="Output 4 Left" />
-      <port direction="output"     content="audio" name="Output 4 Right" />
-      <port direction="output"     content="audio" name="Output 5 Left" />
-      <port direction="output"     content="audio" name="Output 5 Right" />
-      <port direction="output"     content="audio" name="Output 6 Left" />
-      <port direction="output"     content="audio" name="Output 6 Right" />
-      <port direction="output"     content="audio" name="Output 7 Left" />
-      <port direction="output"     content="audio" name="Output 7 Right" />
-      <port direction="output"     content="audio" name="Output 8 Left" />
-      <port direction="output"     content="audio" name="Output 8 Right" />
-      <port direction="input" pp:default="0.000000" pp:minimum="-80.000000" pp:maximum="6.000000"  content="other" name="Volume" />
-      <port direction="input" pp:default="64" pp:minimum="8" pp:maximum="256" pp:type="integer" content="other" name="Polyphony">
-        <pp:enumeration label="8 voices" value="8" />
-        <pp:enumeration label="16 voices" value="16" />
-        <pp:enumeration label="32 voices" value="32" />
-        <pp:enumeration label="64 voices" value="64" />
-        <pp:enumeration label="128 voices" value="128" />
-        <pp:enumeration label="256 voices" value="256" />
-      </port>
-      <port direction="input" pp:default="1" pp:minimum="1" pp:maximum="8" pp:type="integer" content="other" name="Oversampling factor">
-        <pp:enumeration label="x2 oversampling" value="2" />
-        <pp:enumeration label="x4 oversampling" value="4" />
-        <pp:enumeration label="x1 oversampling" value="1" />
-        <pp:enumeration label="x8 oversampling" value="8" />
-      </port>
-      <port direction="input" pp:default="8192" pp:minimum="1024" pp:maximum="65536" pp:type="integer" content="other" name="Preload size">
-        <pp:enumeration label="4 KB" value="1024" />
-        <pp:enumeration label="8 KB" value="2048" />
-        <pp:enumeration label="16 KB" value="4096" />
-        <pp:enumeration label="32 KB" value="8192" />
-        <pp:enumeration label="64 KB" value="16384" />
-        <pp:enumeration label="128 KB" value="32768" />
-        <pp:enumeration label="256 KB" value="65536" />
-      </port>
-      <port direction="input" pp:default="0"   pp:type="toggled" content="other" name="Freewheeling" />
-      <port direction="input" pp:default="60" pp:minimum="0" pp:maximum="127" pp:type="integer" content="other" name="Scala root key" />
-      <port direction="input" pp:default="440.000000" pp:minimum="300.000000" pp:maximum="500.000000"  content="other" name="Tuning frequency" />
-      <port direction="input" pp:default="0.000000" pp:minimum="0.000000" pp:maximum="1.000000"  content="other" name="Stretched tuning" />
-      <port direction="input" pp:default="2.000000" pp:minimum="0.000000" pp:maximum="10.000000"  content="other" name="Sample quality" />
-      <port direction="input" pp:default="1.000000" pp:minimum="0.000000" pp:maximum="3.000000"  content="other" name="Oscillator quality" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="256" pp:type="integer" content="other" name="Active voices" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of curves" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of masters" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of groups" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of regions" />
-      <port direction="output" pp:default="0" pp:minimum="0" pp:maximum="65535" pp:type="integer" content="other" name="Number of samples" />
-      <port direction="input" pp:default="10.000000" pp:minimum="0.000000" pp:maximum="10.000000"  content="other" name="Freewheeling Sample quality" />
-      <port direction="input" pp:default="3.000000" pp:minimum="0.000000" pp:maximum="3.000000"  content="other" name="Freewheeling Oscillator quality" />
-      <port direction="input" pp:default="0"   pp:type="toggled" content="other" name="Sustain cancels release" />
+      <port direction='output' content='audio' name='Output 1 Left' />
+      <port direction='output' content='audio' name='Output 1 Right' />
+      <port direction='output' content='audio' name='Output 2 Left' />
+      <port direction='output' content='audio' name='Output 2 Right' />
+      <port direction='output' content='audio' name='Output 3 Left' />
+      <port direction='output' content='audio' name='Output 3 Right' />
+      <port direction='output' content='audio' name='Output 4 Left' />
+      <port direction='output' content='audio' name='Output 4 Right' />
+      <port direction='output' content='audio' name='Output 5 Left' />
+      <port direction='output' content='audio' name='Output 5 Right' />
+      <port direction='output' content='audio' name='Output 6 Left' />
+      <port direction='output' content='audio' name='Output 6 Right' />
+      <port direction='output' content='audio' name='Output 7 Left' />
+      <port direction='output' content='audio' name='Output 7 Right' />
+      <port direction='output' content='audio' name='Output 8 Left' />
+      <port direction='output' content='audio' name='Output 8 Right' />
+      <port direction='input' content='midi2' name='MIDI In' />
+      <port direction='output' content='midi2' name='MIDI Out' />
     </ports>
   </plugin>
+  -->
 </plugins>
