@@ -28,7 +28,7 @@ dependencies/sfizz-deps/dist/stamp: androidaudioplugin-debug.aar
 	touch dependencies/sfizz-deps/dist/stamp
 
 androidaudioplugin-debug.aar:
-	wget https://github.com/atsushieno/android-audio-plugin-framework/releases/download/v0.5.5/androidaudioplugin-debug.aar
+	wget https://github.com/atsushieno/aap-core/releases/download/v0.5.5/androidaudioplugin-debug.aar
 
 ## Build utility
 

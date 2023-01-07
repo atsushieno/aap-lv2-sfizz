@@ -83,11 +83,11 @@ index 37305afd..c06d359d 100644
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
 diff --git a/plugins/lv2/sfizz.ttl.in b/plugins/lv2/sfizz.ttl.in
-index a72340aa..e4c6d8b8 100644
+index e4c6d8b8..b44c0fe8 100644
 --- a/plugins/lv2/sfizz.ttl.in
 +++ b/plugins/lv2/sfizz.ttl.in
-@@ -449,7 +449,7 @@ midnam:update a lv2:Feature .
- <@LV2PLUGIN_URI@-multi>
+@@ -73,7 +73,7 @@ midnam:update a lv2:Feature .
+ <@LV2PLUGIN_URI@>
    a doap:Project, lv2:Plugin, lv2:InstrumentPlugin ;
  
 -  doap:name "@LV2PLUGIN_NAME@" ;
