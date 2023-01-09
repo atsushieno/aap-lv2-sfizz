@@ -27,7 +27,10 @@
         <enumeration label="128 KB" value="32768" />
         <enumeration label="256 KB" value="65536" />
       </parameter>
-      <parameter id="8" name="Freewheeling" default="0"   type="toggled" />
+      <parameter id="8" name="Freewheeling" default="0"   type="boolean">
+        <enumeration label="true" value="1" />
+        <enumeration label="false" value="0" />
+      </parameter>
       <parameter id="9" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
       <parameter id="10" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
       <parameter id="11" name="Stretched tuning" default="0.000000" minimum="0.000000" maximum="1.000000"  />
@@ -41,7 +44,10 @@
       <parameter id="19" name="Number of samples" default="0" minimum="0" maximum="65535" type="integer" />
       <parameter id="20" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
       <parameter id="21" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
-      <parameter id="22" name="Sustain cancels release" default="0"   type="toggled" />
+      <parameter id="22" name="Sustain cancels release" default="0"   type="boolean">
+        <enumeration label="true" value="1" />
+        <enumeration label="false" value="0" />
+      </parameter>
     </parameters>
     <ports>
       <port direction='output' content='audio' name='Left Output' />
@@ -50,7 +56,6 @@
       <port direction='output' content='midi2' name='MIDI Out' />
     </ports>
   </plugin>
-  <!-- FIXME: bring it back again once issue #7 is fixed -->
   <!--
   <plugin backend="LV2" name="sfizz-multi" category="Instrument" author="SFZTools" manufacturer="" unique-id="lv2:http://sfztools.github.io/sfizz-multi" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" assets="/lv2/sfizz.lv2/">
     <parameters xmlns='urn://androidaudioplugin.org/extensions/parameters'>
@@ -80,7 +85,10 @@
         <enumeration label="128 KB" value="32768" />
         <enumeration label="256 KB" value="65536" />
       </parameter>
-      <parameter id="22" name="Freewheeling" default="0"   type="toggled" />
+      <parameter id="22" name="Freewheeling" default="0"   type="boolean">
+        <enumeration label="true" value="1" />
+        <enumeration label="false" value="0" />
+      </parameter>
       <parameter id="23" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
       <parameter id="24" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
       <parameter id="25" name="Stretched tuning" default="0.000000" minimum="0.000000" maximum="1.000000"  />
@@ -94,7 +102,10 @@
       <parameter id="33" name="Number of samples" default="0" minimum="0" maximum="65535" type="integer" />
       <parameter id="34" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
       <parameter id="35" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
-      <parameter id="36" name="Sustain cancels release" default="0"   type="toggled" />
+      <parameter id="36" name="Sustain cancels release" default="0"   type="boolean">
+        <enumeration label="true" value="1" />
+        <enumeration label="false" value="0" />
+      </parameter>
     </parameters>
     <ports>
       <port direction='output' content='audio' name='Output 1 Left' />

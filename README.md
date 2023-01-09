@@ -2,7 +2,7 @@
 
 This repository is an example port of sfizz LV2 plugin to [Audio Plugins For Android](https://github.com/atsushieno/aap-core), using [aap-lv2](https://github.com/atsushieno/aap-lv2).
 
-Right now there is no way to specify SFZ file from the plugin. It has to be specified at build time. Take it more like a proof of concept right now.
+Right now there is no way to specify SFZ file from the plugin at run time. It has to be specified at build time. Take it more like a proof of concept right now.
 
 ## Building
 
