@@ -33,7 +33,6 @@ class SfzSetupInitializer : Initializer<Any?> {
     }
 
     override fun create(context: Context): Any {
-        // comment out these lines if you want to erase cached content.
         if (File(context.filesDir, "lv2").exists())
             return ""
 

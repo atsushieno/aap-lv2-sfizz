@@ -22,7 +22,7 @@ index 44a87134..d81bbf0c 100644
          if(SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
 diff --git a/plugins/lv2/CMakeLists.txt b/plugins/lv2/CMakeLists.txt
-index 48924d78..8f7a8139 100644
+index 48924d78..96ada60d 100644
 --- a/plugins/lv2/CMakeLists.txt
 +++ b/plugins/lv2/CMakeLists.txt
 @@ -74,12 +74,12 @@ endif()
@@ -62,7 +62,7 @@ index 48924d78..8f7a8139 100644
 +        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2"
 +        COMMAND cp -R "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/"
 +        COMMAND mkdir -p "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
-+        COMMAND mv "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/sfizz.so" "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/jniLibs/${CMAKE_ANDROID_ARCH_ABI}/"
++        COMMAND rm "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/sfizz.so"
 +        COMMAND cp -R "${CMAKE_CURRENT_LIST_DIR}/../../../../external/SplendidGrandPiano" "${CMAKE_CURRENT_LIST_DIR}/../../../../aap-sfizz/src/main/assets/lv2/sfizz.lv2/Contents/Resources/"
 +    )
 diff --git a/plugins/lv2/manifest.ttl.in b/plugins/lv2/manifest.ttl.in
