@@ -2,9 +2,7 @@ package org.androidaudioplugin.samples.aap_sfizz
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ServiceTestRule
-import org.androidaudioplugin.AudioPluginHostHelper
 import org.androidaudioplugin.androidaudioplugin.testing.AudioPluginServiceTesting
 import org.junit.Rule
 import org.junit.Test
