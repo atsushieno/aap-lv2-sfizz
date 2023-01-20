@@ -13,30 +13,36 @@ jobs:
       uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: cache NDK
-      uses: actions/cache@v2
+    - name: cache AVD
+      uses: actions/cache@v3
       env:
-        cache-name: cache-ndk
+        cache-name: cache-avd
       with:
-        path: /usr/local/lib/android/sdk/ndk/21.4.7075529
-        key: ndk_r21e_linux
+        path: /home/runner/.android/gradle/avd
+        key: ${{ runner.os }}-gradle-avd
+    - name: cache gradle caches
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-gradle-caches
+      with:
+        path: /home/runner/.gradle/caches/
+        key: ${{ runner.os }}-gradle-caches
     - name: apt update
       run: |
         sudo apt-get update
     - name: set up JDK 11
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v3
       with:
         java-version: 11
+        distribution: temurin
     - name: apt install
       run: |
         echo y | sudo apt-get install doxygen libgrpc++-dev libgrpc-dev libprotobuf-dev graphviz cmake ninja-build liblilv-dev
-    - name: stupid NDK setup workaround for GitHub Actions
-      run: sudo chmod 777 /usr/local/lib/android/sdk/ && mkdir -p /usr/local/lib/android/sdk/ndk
     - name: build
       run: make
     - name: upload artifact
       if: success()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: aap-sfizz-debug.apk
         path: ./aap-sfizz/build/outputs/apk/debug/aap-sfizz-debug.apk
@@ -50,17 +56,25 @@ jobs:
       uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: cache NDK
-      uses: actions/cache@v2
+    - name: cache AVD
+      uses: actions/cache@v3
       env:
-        cache-name: cache-ndk
+        cache-name: cache-avd
       with:
-        path: /Users/runner/Library/Android/sdk/ndk/21.4.7075529
-        key: ndk_r21e_osx
+        path: /Users/runner/.android/gradle/avd
+        key: ${{ runner.os }}-gradle-avd
+    - name: cache gradle caches
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-gradle-caches
+      with:
+        path: /Users/runner/.gradle/caches/
+        key: ${{ runner.os }}-gradle-caches
     - name: set up JDK 11
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v3
       with:
         java-version: 11
+        distribution: temurin
     - name: install deps
       run: |
         brew install cmake doxygen ninja graphviz lilv
