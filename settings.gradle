@@ -1,2 +1,2 @@
 rootProject.name = 'aap-lv2-sfizz'
-include ':aap-sfizz'
+include ':app'

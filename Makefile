@@ -9,8 +9,8 @@ build-all: \
 	build-java
 
 patch-sfizz: external/sfizz/patch.stamp
-	if [ ! -L aap-sfizz/src/main/cpp ] ; then \
-	cd aap-sfizz/src/main && ln -s ../../../external/sfizz cpp ; \
+	if [ ! -L app/src/main/cpp ] ; then \
+	cd app/src/main && ln -s ../../../external/sfizz cpp ; \
 	else echo "symlink already exists" ; \
 	fi
 
@@ -31,4 +31,4 @@ build-java:
 
 update-metadata:
 	cd external/aap-lv2 && make build-lv2-importer
-	external/aap-lv2/tools/aap-import-lv2-metadata/build/aap-import-lv2-metadata aap-sfizz/src/main/assets/lv2 aap-sfizz/src/main/res/xml
+	external/aap-lv2/tools/aap-import-lv2-metadata/build/aap-import-lv2-metadata app/src/main/assets/lv2 app/src/main/res/xml
