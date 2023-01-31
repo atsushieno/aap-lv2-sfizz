@@ -53,17 +53,17 @@ android {
 }
 
 dependencies {
-    implementation "org.androidaudioplugin:androidaudioplugin:$aap_version"
-    implementation "org.androidaudioplugin:androidaudioplugin-ui-compose:$aap_version"
-    implementation "org.androidaudioplugin:androidaudioplugin-midi-device-service:$aap_version"
-    implementation "org.androidaudioplugin:androidaudioplugin-lv2:$aap_lv2_version"
-    implementation 'androidx.appcompat:appcompat:1.5.1'
-    implementation 'androidx.startup:startup-runtime:1.1.1'
+    implementation libs.aap.lv2
+    implementation libs.aap.core
+    implementation libs.aap.midi.device.service
+    implementation libs.aap.ui.compose
+    implementation libs.androidx.appcompat
+    implementation libs.startup.runtime
 
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation "org.androidaudioplugin:androidaudioplugin-testing:$aap_version"
-    androidTestImplementation 'androidx.test:rules:1.5.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    testImplementation libs.junit
+    androidTestImplementation libs.aap.testing
+    androidTestImplementation libs.test.rules
+    androidTestImplementation libs.test.ext.junit
 }
 
 
