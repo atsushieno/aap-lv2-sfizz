@@ -1,5 +1,7 @@
 <plugins xmlns="urn:org.androidaudioplugin.core" xmlns:pp="urn:org.androidaudioplugin.port">
-  <plugin backend="LV2" name="sfizz" category="Instrument" author="SFZTools" manufacturer="" unique-id="lv2:http://sfztools.github.io/sfizz" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" assets="/lv2/sfizz.lv2/">
+  <plugin backend="LV2" name="sfizz" category="Instrument" author="AAP Developers"
+      developer="AAP Developers" unique-id="lv2:http://sfztools.github.io/sfizz"
+      library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge">
     <parameters xmlns='urn://androidaudioplugin.org/extensions/parameters'>
       <parameter id="0" name="Control"     />
       <parameter id="1" name="Automate"     />

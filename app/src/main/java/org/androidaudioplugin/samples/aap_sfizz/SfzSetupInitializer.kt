@@ -13,9 +13,7 @@ import java.io.FileOutputStream
 class SfzSetupInitializer : Initializer<Any?> {
 
     fun xcopyFromAssetsToLocalStorage(context: Context, dst: File, src: String) {
-        var list = context.assets.list(src)
-        if (list == null)
-            return
+        val list = context.assets.list(src) ?: return
         if (list.any()) {
             if (!dst.exists())
                 dst.mkdirs()
