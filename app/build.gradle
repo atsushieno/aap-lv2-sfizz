@@ -11,7 +11,7 @@ android {
         minSdkVersion 29
         targetSdkVersion 33
         versionCode 1
-        versionName "$aap_lv2_version"
+        versionName libs.versions.aap.lv2.get()
 
         externalNativeBuild {
             cmake {
@@ -21,7 +21,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    ndkVersion "$ndk_version"
+    ndkVersion libs.versions.ndk.get()
 
     buildTypes {
         debug {

@@ -1,5 +1,5 @@
 <devices>
-    <device name="aap-sfizz" manufacturer="androidaudioplugin.org" product="aap-sfizz">
+    <device name="sfizz" manufacturer="androidaudioplugin.org" product="sfizz">
         <input-port name="sfizz" />
         <!-- FIXME: bring it back again once issue #7 is fixed -->
         <!-- input-port name="sfizz-multi" / -->
