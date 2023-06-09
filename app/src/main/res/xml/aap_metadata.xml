@@ -1,5 +1,5 @@
 <plugins xmlns="urn:org.androidaudioplugin.core" xmlns:pp="urn:org.androidaudioplugin.port">
-  <plugin backend="LV2" name="sfizz" category="Instrument" developer="SFZTools" unique-id="lv2:http://sfztools.github.io/sfizz" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" gui:ui-view-factory="org.androidaudioplugin.ui.web.AudioPluginWebViewFactory" xmlns:gui="urn://androidaudioplugin.org/extensions/gui" >
+  <plugin backend="LV2" name="sfizz" category="Instrument" developer="SFZTools" unique-id="lv2:http://sfztools.github.io/sfizz" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" gui:ui-view-factory="org.androidaudioplugin.ui.compose.ComposeAudioPluginViewFactory" xmlns:gui="urn://androidaudioplugin.org/extensions/gui" >
     <extensions>
       <extension uri='urn://androidaudioplugin.org/extensions/plugin-info/v2' />
       <extension uri='urn://androidaudioplugin.org/extensions/state/v2' />
@@ -12,31 +12,31 @@
       <parameter id="1" name="Automate"     />
       <parameter id="4" name="Volume" default="0.000000" minimum="-80.000000" maximum="6.000000"  />
       <parameter id="5" name="Polyphony" default="64" minimum="8" maximum="256" type="integer">
-        <enumeration label="32 voices" value="32" />
-        <enumeration label="64 voices" value="64" />
-        <enumeration label="128 voices" value="128" />
-        <enumeration label="256 voices" value="256" />
-        <enumeration label="8 voices" value="8" />
-        <enumeration label="16 voices" value="16" />
+        <enumeration name="16 voices" value="16" />
+        <enumeration name="8 voices" value="8" />
+        <enumeration name="256 voices" value="256" />
+        <enumeration name="128 voices" value="128" />
+        <enumeration name="64 voices" value="64" />
+        <enumeration name="32 voices" value="32" />
       </parameter>
       <parameter id="6" name="Oversampling factor" default="1" minimum="1" maximum="8" type="integer">
-        <enumeration label="x8 oversampling" value="8" />
-        <enumeration label="x1 oversampling" value="1" />
-        <enumeration label="x2 oversampling" value="2" />
-        <enumeration label="x4 oversampling" value="4" />
+        <enumeration name="x1 oversampling" value="1" />
+        <enumeration name="x8 oversampling" value="8" />
+        <enumeration name="x2 oversampling" value="2" />
+        <enumeration name="x4 oversampling" value="4" />
       </parameter>
       <parameter id="7" name="Preload size" default="8192" minimum="1024" maximum="65536" type="integer">
-        <enumeration label="16 KB" value="4096" />
-        <enumeration label="8 KB" value="2048" />
-        <enumeration label="4 KB" value="1024" />
-        <enumeration label="32 KB" value="8192" />
-        <enumeration label="64 KB" value="16384" />
-        <enumeration label="128 KB" value="32768" />
-        <enumeration label="256 KB" value="65536" />
+        <enumeration name="8 KB" value="2048" />
+        <enumeration name="16 KB" value="4096" />
+        <enumeration name="4 KB" value="1024" />
+        <enumeration name="32 KB" value="8192" />
+        <enumeration name="64 KB" value="16384" />
+        <enumeration name="128 KB" value="32768" />
+        <enumeration name="256 KB" value="65536" />
       </parameter>
       <parameter id="8" name="Freewheeling" default="0"   type="boolean">
-        <enumeration label="true" value="1" />
-        <enumeration label="false" value="0" />
+        <enumeration name="true" value="1" />
+        <enumeration name="false" value="0" />
       </parameter>
       <parameter id="9" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
       <parameter id="10" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
@@ -52,8 +52,8 @@
       <parameter id="20" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
       <parameter id="21" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
       <parameter id="22" name="Sustain cancels release" default="0"   type="boolean">
-        <enumeration label="true" value="1" />
-        <enumeration label="false" value="0" />
+        <enumeration name="true" value="1" />
+        <enumeration name="false" value="0" />
       </parameter>
     </parameters>
     <ports>
@@ -63,7 +63,7 @@
       <port direction='output' content='midi2' name='MIDI Out' />
     </ports>
   </plugin>
-  <plugin backend="LV2" name="sfizz-multi" category="Instrument" developer="SFZTools" unique-id="lv2:http://sfztools.github.io/sfizz-multi" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" gui:ui-view-factory="org.androidaudioplugin.ui.web.AudioPluginWebViewFactory" xmlns:gui="urn://androidaudioplugin.org/extensions/gui" >
+  <plugin backend="LV2" name="sfizz-multi" category="Instrument" developer="SFZTools" unique-id="lv2:http://sfztools.github.io/sfizz-multi" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" gui:ui-view-factory="org.androidaudioplugin.ui.compose.ComposeAudioPluginViewFactory" xmlns:gui="urn://androidaudioplugin.org/extensions/gui" >
     <extensions>
       <extension uri='urn://androidaudioplugin.org/extensions/plugin-info/v2' />
       <extension uri='urn://androidaudioplugin.org/extensions/state/v2' />
@@ -76,31 +76,31 @@
       <parameter id="1" name="Automate"     />
       <parameter id="18" name="Volume" default="0.000000" minimum="-80.000000" maximum="6.000000"  />
       <parameter id="19" name="Polyphony" default="64" minimum="8" maximum="256" type="integer">
-        <enumeration label="8 voices" value="8" />
-        <enumeration label="16 voices" value="16" />
-        <enumeration label="32 voices" value="32" />
-        <enumeration label="64 voices" value="64" />
-        <enumeration label="128 voices" value="128" />
-        <enumeration label="256 voices" value="256" />
+        <enumeration name="8 voices" value="8" />
+        <enumeration name="16 voices" value="16" />
+        <enumeration name="32 voices" value="32" />
+        <enumeration name="64 voices" value="64" />
+        <enumeration name="128 voices" value="128" />
+        <enumeration name="256 voices" value="256" />
       </parameter>
       <parameter id="20" name="Oversampling factor" default="1" minimum="1" maximum="8" type="integer">
-        <enumeration label="x8 oversampling" value="8" />
-        <enumeration label="x1 oversampling" value="1" />
-        <enumeration label="x2 oversampling" value="2" />
-        <enumeration label="x4 oversampling" value="4" />
+        <enumeration name="x8 oversampling" value="8" />
+        <enumeration name="x1 oversampling" value="1" />
+        <enumeration name="x2 oversampling" value="2" />
+        <enumeration name="x4 oversampling" value="4" />
       </parameter>
       <parameter id="21" name="Preload size" default="8192" minimum="1024" maximum="65536" type="integer">
-        <enumeration label="16 KB" value="4096" />
-        <enumeration label="8 KB" value="2048" />
-        <enumeration label="4 KB" value="1024" />
-        <enumeration label="32 KB" value="8192" />
-        <enumeration label="64 KB" value="16384" />
-        <enumeration label="128 KB" value="32768" />
-        <enumeration label="256 KB" value="65536" />
+        <enumeration name="16 KB" value="4096" />
+        <enumeration name="8 KB" value="2048" />
+        <enumeration name="4 KB" value="1024" />
+        <enumeration name="32 KB" value="8192" />
+        <enumeration name="64 KB" value="16384" />
+        <enumeration name="128 KB" value="32768" />
+        <enumeration name="256 KB" value="65536" />
       </parameter>
       <parameter id="22" name="Freewheeling" default="0"   type="boolean">
-        <enumeration label="true" value="1" />
-        <enumeration label="false" value="0" />
+        <enumeration name="true" value="1" />
+        <enumeration name="false" value="0" />
       </parameter>
       <parameter id="23" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
       <parameter id="24" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
@@ -116,8 +116,8 @@
       <parameter id="34" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
       <parameter id="35" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
       <parameter id="36" name="Sustain cancels release" default="0"   type="boolean">
-        <enumeration label="true" value="1" />
-        <enumeration label="false" value="0" />
+        <enumeration name="true" value="1" />
+        <enumeration name="false" value="0" />
       </parameter>
     </parameters>
     <ports>
