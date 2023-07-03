@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 33
+    namespace 'org.androidaudioplugin.ports.lv2.sfizz'
+    compileSdk = 33
 
     defaultConfig {
         applicationId "org.androidaudioplugin.ports.lv2.sfizz"
-        minSdkVersion 29
-        targetSdkVersion 33
+        minSdk = 29
         versionCode 1
         versionName libs.versions.aap.lv2.get()
 
@@ -44,11 +44,14 @@ android {
         prefab true
     }
 
-    aaptOptions {
-        noCompress 'wav'
-    }
     packagingOptions {
         jniLibs.useLegacyPackaging = enable_asan
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    androidResources {
+        noCompress 'wav'
     }
 }
 
@@ -67,11 +70,11 @@ dependencies {
 }
 
 
-task deleteLV2Manifests(type: Delete) {
+tasks.register('deleteLV2Manifests', Delete) {
     delete 'src/main/assets/lv2/sfizz.lv2'
 }
 
-tasks.whenTaskAdded { task ->
+tasks.configureEach { task ->
     // FIXME: it's hacky, but `clean` didn't work.
     if (task.name == "externalNativeBuildCleanDebug" || task.name == "externalNativeBuildCleanRelease")
         task.dependsOn deleteLV2Manifests
