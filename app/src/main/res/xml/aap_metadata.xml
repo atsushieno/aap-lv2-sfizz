@@ -3,59 +3,10 @@
     <extensions>
       <extension uri='urn://androidaudioplugin.org/extensions/plugin-info/v2' />
       <extension uri='urn://androidaudioplugin.org/extensions/state/v2' />
-      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v2' />
+      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v2.1' />
       <extension uri='urn://androidaudioplugin.org/extensions/midi/v2' />
       <extension uri='urn://androidaudioplugin.org/extensions/gui/v2' />
     </extensions>
-    <parameters xmlns='urn://androidaudioplugin.org/extensions/parameters'>
-      <parameter id="0" name="Control"     />
-      <parameter id="1" name="Automate"     />
-      <parameter id="4" name="Volume" default="0.000000" minimum="-80.000000" maximum="6.000000"  />
-      <parameter id="5" name="Polyphony" default="64" minimum="8" maximum="256" type="integer">
-        <enumeration name="16 voices" value="16" />
-        <enumeration name="8 voices" value="8" />
-        <enumeration name="256 voices" value="256" />
-        <enumeration name="128 voices" value="128" />
-        <enumeration name="64 voices" value="64" />
-        <enumeration name="32 voices" value="32" />
-      </parameter>
-      <parameter id="6" name="Oversampling factor" default="1" minimum="1" maximum="8" type="integer">
-        <enumeration name="x1 oversampling" value="1" />
-        <enumeration name="x8 oversampling" value="8" />
-        <enumeration name="x2 oversampling" value="2" />
-        <enumeration name="x4 oversampling" value="4" />
-      </parameter>
-      <parameter id="7" name="Preload size" default="8192" minimum="1024" maximum="65536" type="integer">
-        <enumeration name="8 KB" value="2048" />
-        <enumeration name="16 KB" value="4096" />
-        <enumeration name="4 KB" value="1024" />
-        <enumeration name="32 KB" value="8192" />
-        <enumeration name="64 KB" value="16384" />
-        <enumeration name="128 KB" value="32768" />
-        <enumeration name="256 KB" value="65536" />
-      </parameter>
-      <parameter id="8" name="Freewheeling" default="0"   type="boolean">
-        <enumeration name="true" value="1" />
-        <enumeration name="false" value="0" />
-      </parameter>
-      <parameter id="9" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
-      <parameter id="10" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
-      <parameter id="11" name="Stretched tuning" default="0.000000" minimum="0.000000" maximum="1.000000"  />
-      <parameter id="12" name="Sample quality" default="2.000000" minimum="0.000000" maximum="10.000000"  />
-      <parameter id="13" name="Oscillator quality" default="1.000000" minimum="0.000000" maximum="3.000000"  />
-      <parameter id="14" name="Active voices" default="0" minimum="0" maximum="256" type="integer" />
-      <parameter id="15" name="Number of curves" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="16" name="Number of masters" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="17" name="Number of groups" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="18" name="Number of regions" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="19" name="Number of samples" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="20" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
-      <parameter id="21" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
-      <parameter id="22" name="Sustain cancels release" default="0"   type="boolean">
-        <enumeration name="true" value="1" />
-        <enumeration name="false" value="0" />
-      </parameter>
-    </parameters>
     <ports>
       <port direction='output' content='audio' name='Left Output' />
       <port direction='output' content='audio' name='Right Output' />
@@ -67,59 +18,10 @@
     <extensions>
       <extension uri='urn://androidaudioplugin.org/extensions/plugin-info/v2' />
       <extension uri='urn://androidaudioplugin.org/extensions/state/v2' />
-      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v2' />
+      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v2.1' />
       <extension uri='urn://androidaudioplugin.org/extensions/midi/v2' />
       <extension uri='urn://androidaudioplugin.org/extensions/gui/v2' />
     </extensions>
-    <parameters xmlns='urn://androidaudioplugin.org/extensions/parameters'>
-      <parameter id="0" name="Control"     />
-      <parameter id="1" name="Automate"     />
-      <parameter id="18" name="Volume" default="0.000000" minimum="-80.000000" maximum="6.000000"  />
-      <parameter id="19" name="Polyphony" default="64" minimum="8" maximum="256" type="integer">
-        <enumeration name="8 voices" value="8" />
-        <enumeration name="16 voices" value="16" />
-        <enumeration name="32 voices" value="32" />
-        <enumeration name="64 voices" value="64" />
-        <enumeration name="128 voices" value="128" />
-        <enumeration name="256 voices" value="256" />
-      </parameter>
-      <parameter id="20" name="Oversampling factor" default="1" minimum="1" maximum="8" type="integer">
-        <enumeration name="x8 oversampling" value="8" />
-        <enumeration name="x1 oversampling" value="1" />
-        <enumeration name="x2 oversampling" value="2" />
-        <enumeration name="x4 oversampling" value="4" />
-      </parameter>
-      <parameter id="21" name="Preload size" default="8192" minimum="1024" maximum="65536" type="integer">
-        <enumeration name="16 KB" value="4096" />
-        <enumeration name="8 KB" value="2048" />
-        <enumeration name="4 KB" value="1024" />
-        <enumeration name="32 KB" value="8192" />
-        <enumeration name="64 KB" value="16384" />
-        <enumeration name="128 KB" value="32768" />
-        <enumeration name="256 KB" value="65536" />
-      </parameter>
-      <parameter id="22" name="Freewheeling" default="0"   type="boolean">
-        <enumeration name="true" value="1" />
-        <enumeration name="false" value="0" />
-      </parameter>
-      <parameter id="23" name="Scala root key" default="60" minimum="0" maximum="127" type="integer" />
-      <parameter id="24" name="Tuning frequency" default="440.000000" minimum="300.000000" maximum="500.000000"  />
-      <parameter id="25" name="Stretched tuning" default="0.000000" minimum="0.000000" maximum="1.000000"  />
-      <parameter id="26" name="Sample quality" default="2.000000" minimum="0.000000" maximum="10.000000"  />
-      <parameter id="27" name="Oscillator quality" default="1.000000" minimum="0.000000" maximum="3.000000"  />
-      <parameter id="28" name="Active voices" default="0" minimum="0" maximum="256" type="integer" />
-      <parameter id="29" name="Number of curves" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="30" name="Number of masters" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="31" name="Number of groups" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="32" name="Number of regions" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="33" name="Number of samples" default="0" minimum="0" maximum="65535" type="integer" />
-      <parameter id="34" name="Freewheeling Sample quality" default="10.000000" minimum="0.000000" maximum="10.000000"  />
-      <parameter id="35" name="Freewheeling Oscillator quality" default="3.000000" minimum="0.000000" maximum="3.000000"  />
-      <parameter id="36" name="Sustain cancels release" default="0"   type="boolean">
-        <enumeration name="true" value="1" />
-        <enumeration name="false" value="0" />
-      </parameter>
-    </parameters>
     <ports>
       <port direction='output' content='audio' name='Output 1 Left' />
       <port direction='output' content='audio' name='Output 1 Right' />
