@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace 'org.androidaudioplugin.ports.lv2.sfizz'
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId "org.androidaudioplugin.ports.lv2.sfizz"
@@ -60,6 +60,7 @@ dependencies {
     implementation libs.aap.core
     implementation libs.aap.midi.device.service
     implementation libs.aap.ui.compose
+    implementation libs.aap.ui.compose.app
     implementation libs.androidx.appcompat
     implementation libs.startup.runtime
 

@@ -1,4 +1,4 @@
-<plugins xmlns="urn:org.androidaudioplugin.core" xmlns:pp="urn:org.androidaudioplugin.port">
+<plugins xmlns="urn:org.androidaudioplugin.core">
   <plugin backend="LV2" name="sfizz" category="Instrument" developer="SFZTools" unique-id="lv2:http://sfztools.github.io/sfizz" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" gui:ui-view-factory="org.androidaudioplugin.ui.compose.ComposeAudioPluginViewFactory" xmlns:gui="urn://androidaudioplugin.org/extensions/gui" >
     <extensions>
       <extension uri='urn://androidaudioplugin.org/extensions/plugin-info/v2' />
