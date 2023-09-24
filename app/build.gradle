@@ -56,11 +56,18 @@ android {
 }
 
 dependencies {
-    implementation libs.aap.lv2
-    implementation libs.aap.core
-    implementation libs.aap.midi.device.service
-    implementation libs.aap.ui.compose
-    implementation libs.aap.ui.compose.app
+    // FIXME: the project structure should not be like this, but the buggy build system results in
+    //  this inconsistency: https://github.com/atsushieno/aap-core/issues/172#issuecomment-1716034775
+    //implementation libs.aap.lv2
+    //implementation libs.aap.core
+    //implementation libs.aap.midi.device.service
+    //implementation libs.aap.ui.compose.app
+    //implementation libs.aap.ui.web
+    implementation project(":androidaudioplugin-lv2")
+    implementation project(":androidaudioplugin")
+    implementation project(":androidaudioplugin-midi-device-service")
+    implementation project(":androidaudioplugin-ui-compose-app")
+    implementation project(":androidaudioplugin-ui-web")
     implementation libs.androidx.appcompat
     implementation libs.startup.runtime
 

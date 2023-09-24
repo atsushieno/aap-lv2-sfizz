@@ -21,10 +21,19 @@ external/sfizz/patch.stamp:
 
 ## Build utility
 
+create-local-prop:
+	if [ ! -f local.properties ] ; then \
+		if [ `uname` == "Darwin" ] ; then \
+			echo "sdk.dir=$(HOME)/Library/Android/sdk" > local.properties ; \
+		else \
+			echo "sdk.dir=$(HOME)/Android/Sdk" > local.properties ; \
+		fi ; \
+	fi
+
 build-aap-lv2:
 	cd external/aap-lv2 && make build-non-app
 
-build-java:
+build-java: create-local-prop
 	ANDROID_SDK_ROOT=$(ANDROID_SDK_ROOT) ./gradlew build bundle
 
 ## update AAP metadata
