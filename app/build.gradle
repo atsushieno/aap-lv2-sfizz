@@ -72,7 +72,7 @@ dependencies {
     implementation libs.startup.runtime
 
     testImplementation libs.junit
-    androidTestImplementation libs.aap.testing
+    implementation project(":androidaudioplugin-testing")
     androidTestImplementation libs.test.rules
     androidTestImplementation libs.test.ext.junit
 }
