@@ -7,7 +7,6 @@ project(":androidaudioplugin-lv2").projectDir = new File("external/aap-lv2/andro
 include ':androidaudioplugin'
 include ':androidaudioplugin-testing'
 include ':androidaudioplugin-manager'
-include ':androidaudioplugin-samples-host-engine'
 include ':androidaudioplugin-ui-web'
 include ':androidaudioplugin-ui-compose'
 include ':androidaudioplugin-ui-compose-app'
@@ -16,7 +15,6 @@ include ':androidaudioplugin-lv2'
 project(':androidaudioplugin').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin')
 project(':androidaudioplugin-testing').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-testing')
 project(':androidaudioplugin-manager').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-manager')
-project(':androidaudioplugin-samples-host-engine').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-samples-host-engine')
 project(':androidaudioplugin-ui-web').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-ui-web')
 project(':androidaudioplugin-ui-compose').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-ui-compose')
 project(':androidaudioplugin-ui-compose-app').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-ui-compose-app')
