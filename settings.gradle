@@ -1,6 +1,9 @@
 rootProject.name = "aap-lv2-sfizz"
 include ":app"
 
+//  If you want to test aap-core and aap-lv2 locally, enable these local references
+//  (along with build.gradle.kts changes)
+/*
 include ":androidaudioplugin-lv2"
 project(":androidaudioplugin-lv2").projectDir = new File("external/aap-lv2/androidaudioplugin-lv2")
 
@@ -19,3 +22,4 @@ project(':androidaudioplugin-ui-web').projectDir = new File('external/aap-lv2/ex
 project(':androidaudioplugin-ui-compose').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-ui-compose')
 project(':androidaudioplugin-ui-compose-app').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-ui-compose-app')
 project(':androidaudioplugin-midi-device-service').projectDir = new File('external/aap-lv2/external/aap-core/androidaudioplugin-midi-device-service')
+*/
