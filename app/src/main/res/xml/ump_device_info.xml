@@ -1,0 +1,8 @@
+<devices>
+    <device name="sfizz" manufacturer="androidaudioplugin.org" product="sfizz">
+        <port name="sfizz" />
+        <!-- FIXME: bring it back again once issue #7 is fixed -->
+        <!-- port name="sfizz-multi" / -->
+    </device>
+</devices>
+
