@@ -4,12 +4,3 @@
 local.properties
 /*/build
 build
-
-aap-sfizz/src/main/jniLibs/
-aap-sfizz/src/main/cpp
-
-android-libsndfile-binaries.zip
-androidaudioplugin-debug.aar
-
-dependencies/sfizz-deps/
-dependencies/androidaudioplugin-aar/

@@ -9,10 +9,14 @@ android {
 
     defaultConfig {
         applicationId "org.androidaudioplugin.ports.lv2.sfizz"
-        minSdk = 29
+        minSdk = libs.versions.android.minSdk.get().toInteger()
         versionCode 1
         versionName libs.versions.aap.lv2.get()
 
+        ndk {
+            // should we make it customizable? We skip others just to reduce build time.
+            abiFilters "x86_64", "arm64-v8a"
+        }
         externalNativeBuild {
             cmake {
                 arguments "-DSFIZZ_USE_SNDFILE=0", "-DENABLE_LTO=off", "-DSFIZZ_VST=off", "-DSFIZZ_LV2_UI=off", "-DSFIZZ_JACK=off", "-DSFIZZ_RENDER=off", "-DSFIZZ_SHARED=off", "-DANDROID_STL=c++_shared", "-DAAP_ENABLE_ASAN=" + (enable_asan ? "1" : "0")
@@ -89,4 +93,13 @@ tasks.configureEach { task ->
     // FIXME: it's hacky, but `clean` didn't work.
     if (task.name == "externalNativeBuildCleanDebug" || task.name == "externalNativeBuildCleanRelease")
         task.dependsOn deleteLV2Manifests
+}
+
+afterEvaluate {
+    // LV2 ttl resources are copied at CMake build.
+    // Thus collecting assets must wait for the native build.
+    // But Gradle does not know that it has to wait,
+    // so declare task dependency here.
+    tasks.named("mergeDebugAssets").configure {it.mustRunAfter("mergeDebugNativeLibs") }
+    tasks.named("mergeReleaseAssets").configure {it.mustRunAfter("mergeReleaseNativeLibs") }
 }
