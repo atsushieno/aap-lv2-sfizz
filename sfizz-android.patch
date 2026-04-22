@@ -21,8 +21,44 @@ index 44a87134..d81bbf0c 100644
          target_include_directories(sfizz_sndfile INTERFACE ${SNDFILE_INCLUDE_DIRS})
          if(SFIZZ_STATIC_DEPENDENCIES)
              target_link_libraries(sfizz_sndfile INTERFACE ${SNDFILE_STATIC_LIBRARIES})
+diff --git a/external/atomic_queue/include/atomic_queue/atomic_queue.h b/external/atomic_queue/include/atomic_queue/atomic_queue.h
+index 21dc029b..ab05c169 100644
+--- a/external/atomic_queue/include/atomic_queue/atomic_queue.h
++++ b/external/atomic_queue/include/atomic_queue/atomic_queue.h
+@@ -391,13 +391,13 @@ class AtomicQueue2 : public AtomicQueueCommon<AtomicQueue2<T, SIZE, MINIMIZE_CON
+ 
+     T do_pop(unsigned tail) noexcept {
+         unsigned index = details::remap_index<SHUFFLE_BITS>(tail % size_);
+-        return Base::template do_pop_any(states_[index], elements_[index]);
++        return Base::template do_pop_any<T>(states_[index], elements_[index]);
+     }
+ 
+     template<class U>
+     void do_push(U&& element, unsigned head) noexcept {
+         unsigned index = details::remap_index<SHUFFLE_BITS>(head % size_);
+-        Base::template do_push_any(std::forward<U>(element), states_[index], elements_[index]);
++        Base::template do_push_any<U,T>(std::forward<U>(element), states_[index], elements_[index]);
+     }
+ 
+ public:
+@@ -519,13 +519,13 @@ class AtomicQueueB2 : public AtomicQueueCommon<AtomicQueueB2<T, A, MAXIMIZE_THRO
+ 
+     T do_pop(unsigned tail) noexcept {
+         unsigned index = details::remap_index<SHUFFLE_BITS>(tail & (size_ - 1));
+-        return Base::template do_pop_any(states_[index], elements_[index]);
++        return Base::template do_pop_any<T>(states_[index], elements_[index]);
+     }
+ 
+     template<class U>
+     void do_push(U&& element, unsigned head) noexcept {
+         unsigned index = details::remap_index<SHUFFLE_BITS>(head & (size_ - 1));
+-        Base::template do_push_any(std::forward<U>(element), states_[index], elements_[index]);
++        Base::template do_push_any<T>(std::forward<U>(element), states_[index], elements_[index]);
+     }
+ 
+ public:
 diff --git a/plugins/lv2/CMakeLists.txt b/plugins/lv2/CMakeLists.txt
-index 48924d78..96ada60d 100644
+index 48924d78..357a3f05 100644
 --- a/plugins/lv2/CMakeLists.txt
 +++ b/plugins/lv2/CMakeLists.txt
 @@ -74,12 +74,12 @@ endif()
