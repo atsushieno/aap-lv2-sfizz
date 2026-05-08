@@ -2,8 +2,8 @@
   <plugin backend="LV2" name="sfizz" category="Instrument" developer="SFZTools" unique-id="lv2:http://sfztools.github.io/sfizz" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" gui:ui-view-factory="org.androidaudioplugin.ui.compose.ComposeAudioPluginViewFactory" xmlns:gui="urn://androidaudioplugin.org/extensions/gui" >
     <extensions>
       <extension uri='urn://androidaudioplugin.org/extensions/plugin-info/v3' />
-      <extension uri='urn://androidaudioplugin.org/extensions/state/v3' />
-      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v3' />
+      <extension uri='urn://androidaudioplugin.org/extensions/state/v4' />
+      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v4' />
       <extension uri='urn://androidaudioplugin.org/extensions/midi/v3' />
       <extension uri='urn://androidaudioplugin.org/extensions/gui/v3' />
     </extensions>
@@ -17,8 +17,8 @@
   <plugin backend="LV2" name="sfizz-multi" category="Instrument" developer="SFZTools" unique-id="lv2:http://sfztools.github.io/sfizz-multi" library="libandroidaudioplugin-lv2.so" entrypoint="GetAndroidAudioPluginFactoryLV2Bridge" gui:ui-view-factory="org.androidaudioplugin.ui.compose.ComposeAudioPluginViewFactory" xmlns:gui="urn://androidaudioplugin.org/extensions/gui" >
     <extensions>
       <extension uri='urn://androidaudioplugin.org/extensions/plugin-info/v3' />
-      <extension uri='urn://androidaudioplugin.org/extensions/state/v3' />
-      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v3' />
+      <extension uri='urn://androidaudioplugin.org/extensions/state/v4' />
+      <extension uri='urn://androidaudioplugin.org/extensions/parameters/v4' />
       <extension uri='urn://androidaudioplugin.org/extensions/midi/v3' />
       <extension uri='urn://androidaudioplugin.org/extensions/gui/v3' />
     </extensions>
