@@ -7,4 +7,4 @@ on:
 jobs:
   build-dist:
     uses: atsushieno/aap-lv2/.github/workflows/build-dist-app.yml@main
-
+    secrets: inherit
