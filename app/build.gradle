@@ -10,6 +10,7 @@ android {
     defaultConfig {
         applicationId "org.androidaudioplugin.ports.lv2.sfizz"
         minSdk = libs.versions.android.minSdk.get().toInteger()
+        targetSdk = libs.versions.android.targetSdk.get().toInteger()
         versionCode 1
         versionName libs.versions.aap.lv2.get()
 
