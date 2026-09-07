@@ -1,3 +1,16 @@
+diff --git a/cmake/SfizzConfig.cmake b/cmake/SfizzConfig.cmake
+index e1163fb0..514ab4fe 100644
+--- a/cmake/SfizzConfig.cmake
++++ b/cmake/SfizzConfig.cmake
+@@ -100,7 +100,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+     gw_warn(-Wall -Wextra -Wno-multichar -Werror=return-type)
+     if(SFIZZ_SYSTEM_PROCESSOR MATCHES "^(i.86|x86_64)$")
+         add_compile_options(-msse2)
+-    elseif(SFIZZ_SYSTEM_PROCESSOR MATCHES "^(arm.*)$")
++    elseif(SFIZZ_SYSTEM_PROCESSOR MATCHES "^(arm.*)$" AND NOT SFIZZ_SYSTEM_PROCESSOR STREQUAL "arm64")
+         add_compile_options(-mfpu=neon)
+         if(NOT ANDROID)
+             add_compile_options(-mfloat-abi=hard)
 diff --git a/cmake/SfizzDeps.cmake b/cmake/SfizzDeps.cmake
 index 44a87134..d81bbf0c 100644
 --- a/cmake/SfizzDeps.cmake
@@ -118,6 +131,147 @@ index 37305afd..c06d359d 100644
 -@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <Contents/Binary/@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
+diff --git a/plugins/lv2/sfizz.cpp b/plugins/lv2/sfizz.cpp
+index 8fc65ba9..f47c81ec 100644
+--- a/plugins/lv2/sfizz.cpp
++++ b/plugins/lv2/sfizz.cpp
+@@ -74,6 +74,8 @@ enum
+ static bool
+ sfizz_lv2_load_file(sfizz_plugin_t *self, const char *file_path);
+ 
++static void sfizz_lv2_update_sfz_info(sfizz_plugin_t *self);
++
+ static bool
+ sfizz_lv2_load_scala_file(sfizz_plugin_t *self, const char *file_path);
+ 
+@@ -542,6 +544,8 @@ instantiate(const LV2_Descriptor *descriptor,
+     {
+         const char *uri = (**f).URI;
+         void *data = (**f).data;
++        if (!strcmp(uri, SFIZZ_RESOURCE_FEATURE))
++            self->resource_host = static_cast<const sfizz_resource_host_t*>(data);
+ 
+         // lv2_log_note(&self->logger, "Feature URI: %s\n", (**f).URI);
+ 
+@@ -1447,12 +1451,50 @@ sfizz_lv2_load_file(sfizz_plugin_t *self, const char *file_path)
+     }
+ 
+     ///
++    self->resource_identity.clear();
+     bool status = sfizz_load_or_import_file(self->synth, file_path, nullptr);
+     sfizz_lv2_update_sfz_info(self);
+     sfizz_lv2_update_file_info(self, file_path);
+     return status;
+ }
+ 
++// Called under synth_mutex; host opens never execute from run().
++static bool load_resource_snapshot(sfizz_plugin_t* self, const std::string& identity,
++                                   sfizz_resource_pack_t& pack)
++{
++    bool ok = sfizz_load_resources(self->synth, &pack); // consumes snapshot on all exits
++    self->resource_identity = identity; // retain missing/failed selection for state and retry
++    sfizz_lv2_update_sfz_info(self);
++    return ok;
++}
++
++static int load_resource(void* handle, const char* identity)
++{
++    auto* self = static_cast<sfizz_plugin_t*>(handle);
++    if (!identity || strlen(identity) > 4096 || !self->resource_host) {
++        lv2_log_error(&self->logger, "[sfizz] resource load rejected: missing host or invalid identity\n");
++        return 0;
++    }
++    std::lock_guard<std::mutex> control(self->resource_mutex);
++    sfizz_resource_pack_t pack {};
++    if (!self->resource_host->open(self->resource_host->handle, identity, &pack)) return 0;
++    spin_mutex_lock(self->synth_mutex);
++    bool ok = load_resource_snapshot(self, identity, pack);
++    spin_mutex_unlock(self->synth_mutex);
++    return ok;
++}
++
++static void set_resource_host(void* handle, const sfizz_resource_host_t* host)
++{
++    static_cast<sfizz_plugin_t*>(handle)->resource_host = host;
++}
++
++static int resource_region_count(void* handle)
++{
++    auto* self = static_cast<sfizz_plugin_t*>(handle);
++    return sfizz_get_num_regions(self->synth);
++}
++
+ static bool
+ sfizz_lv2_load_scala_file(sfizz_plugin_t *self, const char *file_path)
+ {
+@@ -1493,12 +1535,28 @@ restore(LV2_Handle instance,
+     // Set default values
+     self->last_keyswitch = -1;
+     sfizz_lv2_get_default_sfz_path(self, self->sfz_file_path, MAX_PATH_SIZE);
+-    sfizz_lv2_get_default_scala_path(self, self->scala_file_path, MAX_PATH_SIZE);
+-
+-    // Fetch back the saved file path, if any
+     size_t size;
+     uint32_t type;
+     uint32_t val_flags;
++    std::string restored_identity;
++    sfizz_resource_pack_t restored_pack {};
++    auto identity_urid = self->map->map(self->map->handle, SFIZZ_RESOURCE_STATE);
++    const void* identity_value = retrieve(handle, identity_urid, &size, &type, &val_flags);
++    if (identity_value) {
++        if (type != self->map->map(self->map->handle, LV2_ATOM__String) || size < 2 || size > 4097 ||
++            static_cast<const char*>(identity_value)[size-1] != 0)
++            return LV2_STATE_ERR_BAD_TYPE;
++        restored_identity.assign(static_cast<const char*>(identity_value), size-1);
++        if (restored_identity.find('\0') != std::string::npos) return LV2_STATE_ERR_BAD_TYPE;
++        if (!self->resource_host || !self->resource_host->open(self->resource_host->handle,
++                restored_identity.c_str(), &restored_pack)) {
++            self->resource_identity = restored_identity;
++            return LV2_STATE_ERR_UNKNOWN;
++        }
++    }
++    sfizz_lv2_get_default_scala_path(self, self->scala_file_path, MAX_PATH_SIZE);
++
++    // Fetch back the saved file path, if any
+     const void *value;
+     value = retrieve(handle, self->sfizz_sfz_file_uri, &size, &type, &val_flags);
+     if (value)
+@@ -1566,7 +1624,8 @@ restore(LV2_Handle instance,
+     // Load an empty file to remove the default sine, and then the new file.
+     sfizz_load_string(self->synth, "empty.sfz", "");
+     self->check_modification = false;
+-    if (sfizz_lv2_load_file(self, self->sfz_file_path))
++    if (!restored_identity.empty() ? load_resource_snapshot(self, restored_identity, restored_pack)
++                                   : sfizz_lv2_load_file(self, self->sfz_file_path))
+     {
+         lv2_log_note(&self->logger,
+             "[sfizz] Restoring the file %s\n", self->sfz_file_path);
+@@ -1632,7 +1691,13 @@ save(LV2_Handle instance,
+ 
+     const char *path;
+ 
+-    // Save the file path
++    // Resource identities are opaque strings, never LV2 filesystem paths.
++    if (!self->resource_identity.empty()) {
++        store(handle, self->map->map(self->map->handle, SFIZZ_RESOURCE_STATE),
++              self->resource_identity.c_str(), self->resource_identity.size()+1,
++              self->map->map(self->map->handle, LV2_ATOM__String), LV2_STATE_IS_POD);
++    }
++    // Save the legacy path as well for backward compatibility.
+     path = self->sfz_file_path;
+     if (map_path)
+     {
+@@ -1924,6 +1989,10 @@ midnam_free(char *string)
+ static const void *
+ extension_data(const char *uri)
+ {
++    static const sfizz_resource_interface_t resources = {
++        set_resource_host, load_resource, resource_region_count
++    };
++    if (!strcmp(uri, SFIZZ_RESOURCE_INTERFACE)) return &resources;
+     static const LV2_Options_Interface options = {lv2_get_options, lv2_set_options};
+     static const LV2_State_Interface state = {save, restore};
+     static const LV2_Worker_Interface worker = {work, work_response, NULL};
 diff --git a/plugins/lv2/sfizz.ttl.in b/plugins/lv2/sfizz.ttl.in
 index e4c6d8b8..b44c0fe8 100644
 --- a/plugins/lv2/sfizz.ttl.in
@@ -132,11 +286,14 @@ index e4c6d8b8..b44c0fe8 100644
    doap:maintainer [
      foaf:name     "@LV2PLUGIN_AUTHOR@" ;
 diff --git a/plugins/lv2/sfizz_lv2_plugin.h b/plugins/lv2/sfizz_lv2_plugin.h
-index e6722397..e950e35e 100644
+index e6722397..75dd0354 100644
 --- a/plugins/lv2/sfizz_lv2_plugin.h
 +++ b/plugins/lv2/sfizz_lv2_plugin.h
-@@ -19,7 +19,8 @@
+@@ -17,9 +17,11 @@
+ #include <absl/types/optional.h>
+ #include <atomic>
  #include <mutex>
++#include "sfizz_resources.h"
  
  #define DEFAULT_SCALA_FILE  "Contents/Resources/DefaultScale.scl"
 -#define DEFAULT_SFZ_FILE    "Contents/Resources/DefaultInstrument.sfz"
@@ -145,3 +302,552 @@ index e6722397..e950e35e 100644
  // This assumes that the longest path is the default sfz file; if not, change it
  #define MAX_BUNDLE_PATH_SIZE (MAX_PATH_SIZE - sizeof(DEFAULT_SFZ_FILE))
  
+@@ -114,6 +116,9 @@ struct sfizz_plugin_t
+     sfizz_client_t *client {};
+     spin_mutex_t *synth_mutex {};
+     bool expect_nominal_block_length {};
++    const sfizz_resource_host_t* resource_host {};
++    std::string resource_identity;
++    std::mutex resource_mutex;
+     char sfz_file_path[MAX_PATH_SIZE] {};
+     char scala_file_path[MAX_PATH_SIZE] {};
+     int num_voices {};
+diff --git a/src/sfizz.h b/src/sfizz.h
+index 916c5ccf..205988f6 100644
+--- a/src/sfizz.h
++++ b/src/sfizz.h
+@@ -1250,3 +1250,13 @@ SFIZZ_EXPORTED_API void sfizz_set_broadcast_callback(sfizz_synth_t* synth, sfizz
+ #ifdef __cplusplus
+ }
+ #endif
++
++#include "sfizz_resources.h"
++#ifdef __cplusplus
++extern "C" {
++#endif
++/** OFF: consumes pack ownership, including on failure. */
++SFIZZ_EXPORTED_API bool sfizz_load_resources(sfizz_synth_t* synth, const sfizz_resource_pack_t* pack);
++#ifdef __cplusplus
++}
++#endif
+diff --git a/src/sfizz/FilePool.cpp b/src/sfizz/FilePool.cpp
+index e15be0f4..4b18cd52 100644
+--- a/src/sfizz/FilePool.cpp
++++ b/src/sfizz/FilePool.cpp
+@@ -167,6 +167,13 @@ sfz::FilePool::~FilePool()
+ 
+ bool sfz::FilePool::checkSample(std::string& filename) const noexcept
+ {
++    if (resources) {
++        if (fs::path(filename).is_absolute()) return false;
++        const auto* r = resources->find((rootDirectory / filename).generic_string());
++        if (!r) return false;
++        filename = (fs::path("/") / r->name).lexically_relative(rootDirectory).generic_string();
++        return true;
++    }
+     fs::path path { rootDirectory / filename };
+     std::error_code ec;
+     if (fs::exists(path, ec))
+@@ -244,6 +251,7 @@ bool sfz::FilePool::checkSampleId(FileId& fileId) const noexcept
+ 
+ absl::optional<sfz::FileInformation> getReaderInformation(sfz::AudioReader* reader) noexcept
+ {
++    if (!reader || reader->frames() <= 0) return {};
+     const unsigned channels = reader->channels();
+     if (channels != 1 && channels != 2)
+         return {};
+@@ -299,10 +307,10 @@ absl::optional<sfz::FileInformation> sfz::FilePool::getFileInformation(const Fil
+ 
+     const fs::path file { rootDirectory / fileId.filename() };
+ 
+-    if (!fs::exists(file))
++    if (!resources && !fs::exists(file))
+         return {};
+ 
+-    AudioReaderPtr reader = createAudioReader(file, fileId.isReverse());
++    AudioReaderPtr reader = openAudio(file, fileId.isReverse());
+     return getReaderInformation(reader.get());
+ }
+ 
+@@ -320,8 +328,9 @@ bool sfz::FilePool::preloadFile(const FileId& fileId, uint32_t maxOffset) noexce
+ 
+     fileInformation->maxOffset = maxOffset;
+     const fs::path file { rootDirectory / fileId.filename() };
+-    AudioReaderPtr reader = createAudioReader(file, fileId.isReverse());
++    AudioReaderPtr reader = openAudio(file, fileId.isReverse());
+ 
++    if (!reader) return {};
+     const auto frames = static_cast<uint32_t>(reader->frames());
+     const auto framesToLoad = [&]() {
+         if (loadInRam)
+@@ -392,8 +401,9 @@ sfz::FileDataHolder sfz::FilePool::loadFile(const FileId& fileId) noexcept
+     }
+ 
+     const fs::path file { rootDirectory / fileId.filename() };
+-    AudioReaderPtr reader = createAudioReader(file, fileId.isReverse());
++    AudioReaderPtr reader = openAudio(file, fileId.isReverse());
+ 
++    if (!reader) return {};
+     const auto frames = static_cast<uint32_t>(reader->frames());
+     auto insertedPair = loadedFiles.insert_or_assign(fileId, {
+         readFromFile(*reader, frames),
+@@ -412,6 +422,7 @@ sfz::FileDataHolder sfz::FilePool::loadFromRam(const FileId& fileId, const std::
+ 
+     auto reader = createAudioReaderFromMemory(data.data(), data.size(), fileId.isReverse());
+     auto fileInformation = getReaderInformation(reader.get());
++    if (!reader || !fileInformation) return {};
+     const auto frames = static_cast<uint32_t>(reader->frames());
+     auto insertedPair = loadedFiles.insert_or_assign(fileId, {
+         readFromFile(*reader, frames),
+@@ -457,7 +468,8 @@ void sfz::FilePool::setPreloadSize(uint32_t preloadSize) noexcept
+     for (auto& preloadedFile : preloadedFiles) {
+         const auto maxOffset = preloadedFile.second.information.maxOffset;
+         fs::path file { rootDirectory / preloadedFile.first.filename() };
+-        AudioReaderPtr reader = createAudioReader(file, preloadedFile.first.isReverse());
++        AudioReaderPtr reader = openAudio(file, preloadedFile.first.isReverse());
++        if (!reader) continue;
+         preloadedFile.second.preloadedData = readFromFile(*reader, preloadSize + maxOffset);
+     }
+ }
+@@ -474,9 +486,9 @@ void sfz::FilePool::loadingJob(const QueuedFileData& data) noexcept
+ 
+     const fs::path file { rootDirectory / id->filename() };
+     std::error_code readError;
+-    AudioReaderPtr reader = createAudioReader(file, id->isReverse(), &readError);
++    AudioReaderPtr reader = openAudio(file, id->isReverse(), &readError);
+ 
+-    if (readError) {
++    if (readError || !reader) {
+         DBG("[sfizz] libsndfile errored for " << *id << " with message " << readError.message());
+         return;
+     }
+@@ -615,7 +627,8 @@ void sfz::FilePool::setRamLoading(bool loadInRam) noexcept
+     if (loadInRam) {
+         for (auto& preloadedFile : preloadedFiles) {
+             fs::path file { rootDirectory / preloadedFile.first.filename() };
+-            AudioReaderPtr reader = createAudioReader(file, preloadedFile.first.isReverse());
++            AudioReaderPtr reader = openAudio(file, preloadedFile.first.isReverse());
++            if (!reader) continue;
+             preloadedFile.second.preloadedData = readFromFile(
+                 *reader,
+                 preloadedFile.second.information.end
+@@ -668,3 +681,34 @@ void sfz::FilePool::triggerGarbageCollection() noexcept
+     semGarbageBarrier.post(ec);
+     ASSERT(!ec);
+ }
++
++namespace sfz {
++namespace {
++class ResourceAudioReader final : public AudioReader {
++    std::shared_ptr<const ResourceSet> owner;
++    AudioReaderPtr reader;
++public:
++    ResourceAudioReader(std::shared_ptr<const ResourceSet> o, AudioReaderPtr r)
++        : owner(std::move(o)), reader(std::move(r)) {}
++    AudioReaderType type() const override { return reader->type(); }
++    int format() const override { return reader->format(); }
++    int64_t frames() const override { return reader->frames(); }
++    unsigned channels() const override { return reader->channels(); }
++    unsigned sampleRate() const override { return reader->sampleRate(); }
++    size_t readNextBlock(float* b, size_t n) override { return reader->readNextBlock(b,n); }
++    bool getInstrumentInfo(InstrumentInfo& i) override { return reader->getInstrumentInfo(i); }
++    bool getWavetableInfo(WavetableInfo& i) override { return reader->getWavetableInfo(i); }
++};
++}
++AudioReaderPtr FilePool::openAudio(const fs::path& path, bool reverse, std::error_code* ec) const {
++    if (!resources) return createAudioReader(path, reverse, ec);
++    const auto* r = resources->find(path.generic_string());
++    if (!r) {
++        if (ec) *ec = std::make_error_code(std::errc::no_such_file_or_directory);
++        return {};
++    }
++    auto reader = createAudioReaderFromMemory(r->data, r->size, reverse, ec);
++    if (!reader) return {};
++    return AudioReaderPtr(new ResourceAudioReader(resources, std::move(reader)));
++}
++}
+diff --git a/src/sfizz/FilePool.h b/src/sfizz/FilePool.h
+index f76e2783..76a25b7a 100644
+--- a/src/sfizz/FilePool.h
++++ b/src/sfizz/FilePool.h
+@@ -25,6 +25,8 @@
+ 
+ #pragma once
+ #include "Config.h"
++#include "ResourceSet.h"
++#include "AudioReader.h"
+ #include "Defaults.h"
+ #include "RTSemaphore.h"
+ #include "AudioBuffer.h"
+@@ -200,6 +202,9 @@ public:
+      *
+      * @param directory
+      */
++    std::shared_ptr<const ResourceSet> resources;
++    AudioReaderPtr openAudio(const fs::path&, bool, std::error_code* = nullptr) const;
++
+     void setRootDirectory(const fs::path& directory) noexcept { rootDirectory = directory; }
+     /**
+      * @brief Get the number of preloaded sample files
+diff --git a/src/sfizz/ResourceSet.h b/src/sfizz/ResourceSet.h
+new file mode 100644
+index 00000000..03b2ebf2
+--- /dev/null
++++ b/src/sfizz/ResourceSet.h
+@@ -0,0 +1,72 @@
++// SPDX-License-Identifier: BSD-2-Clause
++#pragma once
++#include "../sfizz_resources.h"
++#include <algorithm>
++#include <memory>
++#include <string>
++#include <unordered_map>
++#include <stdexcept>
++#include <vector>
++namespace sfz {
++// Immutable, so parser and background decoder jobs can share the same snapshot.
++class ResourceSet {
++public:
++    explicit ResourceSet(const sfizz_resource_pack_t& pack)
++        : owner_(pack.owner, pack.release ? pack.release : [](void*) {}) {
++        if (pack.version != 1 || !pack.entry || !pack.resources || !pack.count || pack.count > 65536)
++            throw std::invalid_argument("Invalid resource pack");
++        entry = normalize(pack.entry);
++        for (size_t i = 0; i < pack.count; ++i) {
++            const auto& r = pack.resources[i];
++            if (!r.name || !r.data || !r.size) throw std::invalid_argument("Empty resource");
++            std::string name = normalize(r.name);
++            if (name != r.name || !files_.emplace(name, r).second)
++                throw std::invalid_argument("Noncanonical or duplicate resource name");
++        }
++        if (!find(entry, false)) throw std::invalid_argument("Missing entry SFZ");
++    }
++    static std::string normalize(std::string path) {
++        if (path.empty() || path.size() > 4096 || path[0] == '/' || path.find(':') != std::string::npos)
++            throw std::invalid_argument("Invalid resource path");
++        std::replace(path.begin(), path.end(), '\\', '/');
++        std::vector<std::string> parts;
++        size_t start = 0;
++        while (start <= path.size()) {
++            auto end = path.find('/', start);
++            auto part = path.substr(start, end == std::string::npos ? end : end-start);
++            if (part == "..") {
++                if (parts.empty()) throw std::invalid_argument("Resource escapes pack");
++                parts.pop_back();
++            } else if (!part.empty() && part != ".") parts.push_back(part);
++            if (end == std::string::npos) break;
++            start = end+1;
++        }
++        std::string result;
++        for (const auto& p : parts) { if (!result.empty()) result += '/'; result += p; }
++        if (result.empty()) throw std::invalid_argument("Empty resource path");
++        return result;
++    }
++    const sfizz_resource_t* find(std::string path, bool caseFallback = true) const noexcept {
++        try {
++            // Engine paths live beneath a synthetic root; never touch the filesystem.
++            if (!path.empty() && path[0] == '/') path.erase(0, 1);
++            path = normalize(path);
++            auto it = files_.find(path);
++            if (it != files_.end()) return &it->second;
++            if (!caseFallback) return nullptr;
++            auto lower = [](std::string s) { for (char& c : s) if (c >= 'A' && c <= 'Z') c += 'a'-'A'; return s; };
++            const auto folded = lower(path);
++            const sfizz_resource_t* found = nullptr;
++            for (const auto& item : files_) if (lower(item.first) == folded) {
++                if (found) return nullptr; // ambiguous case, never depend on enumeration order
++                found = &item.second;
++            }
++            return found;
++        } catch (...) { return nullptr; }
++    }
++    std::string entry;
++private:
++    std::shared_ptr<void> owner_;
++    std::unordered_map<std::string, sfizz_resource_t> files_;
++};
++}
+diff --git a/src/sfizz/Synth.cpp b/src/sfizz/Synth.cpp
+index d589fafd..e060e573 100644
+--- a/src/sfizz/Synth.cpp
++++ b/src/sfizz/Synth.cpp
+@@ -634,9 +634,31 @@ void Synth::Impl::prepareSfzLoad(const fs::path& path)
+     }
+ }
+ 
++bool Synth::loadResources(std::shared_ptr<const ResourceSet> resources)
++{
++    Impl& impl = *impl_;
++    auto& pool = impl.resources_.getFilePool();
++    pool.waitForBackgroundLoading();
++    impl.lastPath_.clear(); // every immutable session is a new cache generation
++    impl.prepareSfzLoad(fs::path("/") / resources->entry);
++    pool.resources = resources;
++    impl.parser_.resources = std::move(resources);
++    impl.parser_.parseFile(fs::path("/") / impl.parser_.resources->entry);
++    if (impl.parser_.getErrorCount() || impl.layers_.empty()) return false;
++    impl.finalizeSfzLoad();
++    return !impl.layers_.empty();
++}
++
+ bool Synth::loadSfzFile(const fs::path& file)
+ {
+     Impl& impl = *impl_;
++    if (impl.parser_.resources) {
++        impl.resources_.getFilePool().waitForBackgroundLoading();
++        impl.resources_.getFilePool().clear();
++        impl.resources_.getFilePool().resources.reset();
++        impl.parser_.resources.reset();
++        impl.lastPath_.clear();
++    }
+     impl.prepareSfzLoad(file);
+ 
+     std::error_code ec;
+@@ -666,6 +688,13 @@ bool Synth::loadSfzFile(const fs::path& file)
+ bool Synth::loadSfzString(const fs::path& path, absl::string_view text)
+ {
+     Impl& impl = *impl_;
++    if (impl.parser_.resources) {
++        impl.resources_.getFilePool().waitForBackgroundLoading();
++        impl.resources_.getFilePool().clear();
++        impl.resources_.getFilePool().resources.reset();
++        impl.parser_.resources.reset();
++        impl.lastPath_.clear();
++    }
+     impl.prepareSfzLoad(path);
+ 
+     bool success = true;
+@@ -2126,6 +2155,7 @@ void Synth::Impl::resetAllControllers(int delay) noexcept
+ 
+ absl::optional<fs::file_time_type> Synth::Impl::checkModificationTime() const
+ {
++    if (parser_.resources) return {}; // immutable snapshots never poll filesystem mtimes
+     absl::optional<fs::file_time_type> resultTime;
+     for (const auto& file : parser_.getIncludedFiles()) {
+         std::error_code ec;
+diff --git a/src/sfizz/Synth.h b/src/sfizz/Synth.h
+index eb98a453..9b9a9542 100644
+--- a/src/sfizz/Synth.h
++++ b/src/sfizz/Synth.h
+@@ -5,6 +5,7 @@
+ // If not, contact the sfizz maintainers at https://github.com/sfztools/sfizz
+ 
+ #pragma once
++#include "ResourceSet.h"
+ #include "AudioSpan.h"
+ #include "Resources.h"
+ #include "Messaging.h"
+@@ -103,6 +104,7 @@ public:
+      * @return true
+      * @return false if the file was not found or no regions were loaded.
+      */
++    bool loadResources(std::shared_ptr<const ResourceSet> resources);
+     bool loadSfzFile(const fs::path& file);
+     /**
+      * @brief Empties the current regions and load a new SFZ document from memory.
+diff --git a/src/sfizz/parser/Parser.cpp b/src/sfizz/parser/Parser.cpp
+index 26911739..82a09790 100644
+--- a/src/sfizz/parser/Parser.cpp
++++ b/src/sfizz/parser/Parser.cpp
+@@ -91,6 +91,16 @@ void Parser::includeNewFile(const fs::path& path, std::unique_ptr<Reader> reader
+         return;
+     }
+ 
++    if (!reader && resources) {
++        const auto* resource = resources->find(fullPath.generic_string(), false);
++        if (!resource || resource->size > 16 * 1024 * 1024) {
++            emitError(makeErrorRange(), "Cannot open resource: " + fullPath.string());
++            return;
++        }
++        fullPath = fs::path("/") / resource->name;
++        reader = absl::make_unique<StringViewReader>(fullPath,
++            absl::string_view(static_cast<const char*>(resource->data), resource->size));
++    }
+     if (!reader) {
+         auto fileReader = absl::make_unique<FileReader>(fullPath);
+         if (fileReader->hasError()) {
+@@ -206,6 +216,10 @@ void Parser::processDirective()
+         path = expandDollarVars({ valueStart, valueEnd }, path);
+ 
+         std::replace(path.begin(), path.end(), '\\', '/');
++        if (resources && (path.empty() || path[0] == '/' || path.find(':') != std::string::npos)) {
++            emitError({start, end}, "Absolute resource include is not allowed");
++            return;
++        }
+         includeNewFile(path, nullptr, { start, end });
+     }
+     else {
+diff --git a/src/sfizz/parser/Parser.h b/src/sfizz/parser/Parser.h
+index e83fc1ad..4faf2ca9 100644
+--- a/src/sfizz/parser/Parser.h
++++ b/src/sfizz/parser/Parser.h
+@@ -6,6 +6,7 @@
+ 
+ #pragma once
+ #include "../Opcode.h"
++#include "../ResourceSet.h"
+ #include <ghc/fs_std.hpp>
+ #include <absl/types/optional.h>
+ #include <absl/container/flat_hash_map.h>
+@@ -33,6 +34,8 @@ public:
+     void addExternalDefinition(absl::string_view id, absl::string_view value);
+     void clearExternalDefinitions();
+ 
++    std::shared_ptr<const ResourceSet> resources;
++
+     void parseFile(const fs::path& path);
+     void parseString(const fs::path& path, absl::string_view sfzView);
+     void parseVirtualFile(const fs::path& path, std::unique_ptr<Reader> reader);
+diff --git a/src/sfizz/sfizz_wrapper.cpp b/src/sfizz/sfizz_wrapper.cpp
+index fb82435b..a000d18d 100644
+--- a/src/sfizz/sfizz_wrapper.cpp
++++ b/src/sfizz/sfizz_wrapper.cpp
+@@ -466,3 +466,10 @@ void sfizz_set_broadcast_callback(sfizz_synth_t* synth, sfizz_receive_t* broadca
+ #ifdef __cplusplus
+ }
+ #endif
++
++bool sfizz_load_resources(sfizz_synth_t* synth, const sfizz_resource_pack_t* pack)
++{
++    if (!pack) return false;
++    try { return synth->synth.loadResources(std::make_shared<sfz::ResourceSet>(*pack)); }
++    catch (...) { return false; }
++}
+diff --git a/src/sfizz_resources.h b/src/sfizz_resources.h
+new file mode 100644
+index 00000000..de37b1f6
+--- /dev/null
++++ b/src/sfizz_resources.h
+@@ -0,0 +1,41 @@
++// SPDX-License-Identifier: BSD-2-Clause
++#pragma once
++#include <stddef.h>
++#include <stdint.h>
++#ifdef __cplusplus
++extern "C" {
++#endif
++/* Immutable encoded resources. Names are canonical, case-sensitive pack-relative
++ * UTF-8 paths. The caller transfers one ownership reference to load_resources,
++ * including on failure. release must remain callable until all readers finish.
++ * No callback is made from the audio thread. ABI version 1. */
++typedef struct sfizz_resource_t {
++    const char* name;
++    const void* data;
++    size_t size;
++} sfizz_resource_t;
++typedef struct sfizz_resource_pack_t {
++    uint32_t version;
++    const char* entry;
++    const sfizz_resource_t* resources;
++    size_t count;
++    void* owner;
++    void (*release)(void*);
++} sfizz_resource_pack_t;
++#define SFIZZ_RESOURCE_FEATURE "urn:org.androidaudioplugin:sfz-resources:1"
++#define SFIZZ_RESOURCE_INTERFACE "urn:org.androidaudioplugin:sfz-selection:1"
++#define SFIZZ_RESOURCE_STATE "urn:org.androidaudioplugin:sfz-selection:1#identity"
++/* Host feature. open runs on a control/worker thread, returns an owned snapshot. */
++typedef struct sfizz_resource_host_t {
++    void* handle;
++    int (*open)(void*, const char* identity, sfizz_resource_pack_t*);
++} sfizz_resource_host_t;
++/* LV2 local interface. load is OFF/serialized with state operations by caller. */
++typedef struct sfizz_resource_interface_t {
++    void (*set_host)(void* instance, const sfizz_resource_host_t* host);
++    int (*load)(void* instance, const char* identity);
++    int (*region_count)(void* instance);
++} sfizz_resource_interface_t;
++#ifdef __cplusplus
++}
++#endif
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index fa708458..d503ee46 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -7,6 +7,7 @@ include(CTest)
+ include(Catch)
+ 
+ set(SFIZZ_TEST_SOURCES
++    ResourcesT.cpp
+     DirectRegionT.cpp
+     RegionValuesT.cpp
+     RegionValuesSetT.cpp
+diff --git a/tests/ResourcesT.cpp b/tests/ResourcesT.cpp
+new file mode 100644
+index 00000000..08d6c223
+--- /dev/null
++++ b/tests/ResourcesT.cpp
+@@ -0,0 +1,73 @@
++// SPDX-License-Identifier: BSD-2-Clause
++#include "catch2/catch.hpp"
++#include "sfizz/Synth.h"
++#include "sfizz/Region.h"
++#include "sfizz/AudioBuffer.h"
++#include <fstream>
++#include <map>
++using namespace sfz;
++namespace {
++struct TestPack {
++    std::map<std::string, std::vector<char>> files;
++    std::vector<sfizz_resource_t> entries;
++    int* released;
++    ~TestPack() { if (released) ++*released; }
++};
++std::shared_ptr<ResourceSet> pack(const std::string& text, int* released = nullptr) {
++    auto* p = new TestPack;
++    p->released = released;
++    p->files["instruments/main.sfz"] = std::vector<char>(text.begin(), text.end());
++    std::string include = "<control> default_path=../samples/\n<region> sample=sine.wav pitch_keycenter=69\n";
++    p->files["instruments/parts/region.sfz"] = std::vector<char>(include.begin(), include.end());
++    std::ifstream wav("../../sample-sfz-provider/src/main/assets/pack/samples/Sine.wav", std::ios::binary);
++    REQUIRE(wav.is_open());
++    p->files["samples/Sine.wav"] = std::vector<char>(std::istreambuf_iterator<char>(wav), {});
++    for (const auto& f : p->files) p->entries.push_back({f.first.c_str(), f.second.data(), f.second.size()});
++    sfizz_resource_pack_t data {1, "instruments/main.sfz", p->entries.data(), p->entries.size(), p,
++        [](void* owner) { delete static_cast<TestPack*>(owner); }};
++    return std::make_shared<ResourceSet>(data);
++}
++}
++TEST_CASE("Resource includes, case correction, parent paths, playback and lifetime", "[resources]") {
++    int released = 0;
++    {
++        Synth synth;
++        synth.setSamplesPerBlock(256);
++        auto resources = pack("#include \"parts/region.sfz\"\n", &released);
++        REQUIRE(synth.loadResources(resources));
++        resources.reset();
++        REQUIRE(released == 0);
++        REQUIRE(synth.getNumRegions() == 1);
++        REQUIRE(synth.getRegionView(0)->sampleId->filename() == "../samples/Sine.wav");
++        synth.noteOn(0, 69, 100);
++        AudioBuffer<float> audio(2, 256);
++        float energy = 0;
++        for (int i = 0; i < 100; ++i) {
++            synth.renderBlock(audio);
++            for (float v : audio.getSpan(0)) energy += v*v;
++        }
++        REQUIRE(energy > 1.0f);
++        // Return to legacy loading; old maps can be freed after jobs complete.
++        REQUIRE(synth.loadSfzString("/virtual/test.sfz", "<region> sample=*sine"));
++        REQUIRE(released == 1);
++    }
++    REQUIRE(released == 1);
++}
++TEST_CASE("Resource failures do not fall back to filesystem", "[resources]") {
++    Synth synth;
++    REQUIRE_FALSE(synth.loadResources(pack("#include \"/etc/passwd\"\n<region> sample=*sine")));
++    REQUIRE_FALSE(synth.loadResources(pack("#include \"../../escape.sfz\"\n<region> sample=*sine")));
++    REQUIRE_FALSE(synth.loadResources(pack("<region> sample=../../escape.wav")));
++    REQUIRE_FALSE(synth.loadResources(pack("<region> sample=missing.wav")));
++    REQUIRE(synth.loadResources(pack("<region> sample=*sine")));
++}
++TEST_CASE("Resource namespaces and normalization", "[resources]") {
++    REQUIRE(ResourceSet::normalize("a/../b/./sample.wav") == "b/sample.wav");
++    REQUIRE_THROWS(ResourceSet::normalize("../../outside.wav"));
++    REQUIRE_THROWS(ResourceSet::normalize("/outside.wav"));
++    Synth one, two;
++    REQUIRE(one.loadResources(pack("<region> sample=*sine")));
++    REQUIRE(two.loadResources(pack("<region> sample=*sine\n<region> sample=*sine")));
++    REQUIRE(one.getNumRegions() == 1);
++    REQUIRE(two.getNumRegions() == 2);
++}

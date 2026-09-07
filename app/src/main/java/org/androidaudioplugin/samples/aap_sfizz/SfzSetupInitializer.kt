@@ -1,11 +1,5 @@
 package org.androidaudioplugin.samples.aap_sfizz
 import android.content.Context
-import android.os.Bundle
-import android.provider.MediaStore
-import android.util.Log
-import android.widget.Button
-import androidx.appcompat.app.AppCompatActivity
-import androidx.startup.AppInitializer
 import androidx.startup.Initializer
 import java.io.File
 import java.io.FileOutputStream
@@ -31,6 +25,7 @@ class SfzSetupInitializer : Initializer<Any?> {
     }
 
     override fun create(context: Context): Any {
+        SfzResourceClient.initialize(context)
         if (File(context.filesDir, "lv2").exists())
             return ""
 

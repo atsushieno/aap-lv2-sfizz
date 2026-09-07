@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="SFZ Example Pack">
+        <service android:name=".ExampleSfzService" android:exported="true">
+            <intent-filter><action android:name="org.androidaudioplugin.SfzResourceService.V1" /></intent-filter>
+        </service>
+    </application>
+</manifest>

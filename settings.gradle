@@ -15,7 +15,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "aap-lv2-sfizz"
-include ":app"
+include ":app", ":sfz-provider", ":sample-sfz-provider", ":androidaudioplugin-lv2"
+project(":androidaudioplugin-lv2").projectDir = file("external/aap-lv2/androidaudioplugin-lv2")
 
 //  If you want to test aap-core and aap-lv2 locally, enable these local references
 //  (along with build.gradle.kts changes)

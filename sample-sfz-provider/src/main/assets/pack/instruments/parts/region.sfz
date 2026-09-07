@@ -1,0 +1,2 @@
+<control> default_path=../samples/
+<region> sample=Sine.wav pitch_keycenter=69 ampeg_release=0.1

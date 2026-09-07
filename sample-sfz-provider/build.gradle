@@ -1,0 +1,15 @@
+plugins { id 'com.android.application'; id 'kotlin-android' }
+android {
+    namespace 'org.androidaudioplugin.sfz.example'
+    compileSdk = libs.versions.android.compileSdk.get().toInteger()
+    defaultConfig {
+        applicationId 'org.androidaudioplugin.sfz.example'
+        minSdk = libs.versions.android.minSdk.get().toInteger()
+        targetSdk = libs.versions.android.targetSdk.get().toInteger()
+        versionCode 1; versionName '1.0'
+    }
+    androidResources { noCompress 'sfz', 'wav', 'flac', 'ogg', 'mp3' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_11; targetCompatibility JavaVersion.VERSION_11 }
+    kotlinOptions { jvmTarget = '11' }
+}
+dependencies { implementation project(':sfz-provider') }

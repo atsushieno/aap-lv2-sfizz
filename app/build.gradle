@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -45,11 +46,12 @@ android {
 
     externalNativeBuild {
         cmake {
-            path "../external/sfizz/CMakeLists.txt"
+            path "../native/CMakeLists.txt"
         }
     }
     buildFeatures {
         prefab true
+        compose true
     }
 
     packagingOptions {
@@ -59,18 +61,25 @@ android {
         jvmTarget = '1.8'
     }
     androidResources {
-        noCompress 'wav'
+        // Resource providers must be able to return seekable AssetFileDescriptors.
+        noCompress 'sfz', 'wav', 'flac', 'ogg', 'mp3', 'txt', 'md', 'git', 'gitattributes'
     }
 }
 
 dependencies {
-    implementation libs.aap.lv2
+    implementation platform(libs.compose.bom)
+    implementation libs.activity.compose
+    implementation 'androidx.compose.material3:material3'
+    implementation project(":androidaudioplugin-lv2")
+    implementation project(":sfz-provider")
     implementation libs.aap.core
     implementation libs.aap.midi.device.service
+    implementation libs.aap.ui.compose
     implementation libs.aap.ui.compose.app
     implementation libs.aap.ui.web
     implementation libs.aap.js.controller
     androidTestImplementation libs.aap.testing
+    androidTestImplementation libs.androidx.rules
     //  If you want to test aap-core and aap-lv2 locally, switch to these local references
     //  (along with settings.gradle.kts changes)
     /*
