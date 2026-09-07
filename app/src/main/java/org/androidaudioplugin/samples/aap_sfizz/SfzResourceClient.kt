@@ -61,10 +61,11 @@ object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
                 }
             }
         }
-        return result
+        return result + SfzFolders.discover(context)
     }
     override fun open(identity: String): AudioPluginLV2ResourceBridge.Snapshot {
         val uri = Uri.parse(identity)
+        if (uri.scheme == "aap-sfz-folder") return SfzFolders.open(context, uri)
         require(identity.length <= 4096 && uri.scheme == "aap-sfz" && uri.pathSegments.size == 2 && uri.fragment == null)
         val component = ComponentName(requireNotNull(uri.host), uri.pathSegments[0])
         val revision = requireNotNull(uri.getQueryParameter("revision"))

@@ -12,7 +12,11 @@ object AudioPluginLV2ResourceBridge {
         @JvmField val entry: String,
         @JvmField val names: Array<String>,
         @JvmField val descriptors: Array<AssetFileDescriptor>,
+        private val cleanup: () -> Unit = {},
+        private val opener: ((String) -> AssetFileDescriptor)? = null,
     ) : AutoCloseable {
+        @JvmField val lazy = opener != null
+        fun openResource(path: String): AssetFileDescriptor = requireNotNull(opener)(path)
         override fun close() {
             descriptors.forEach { descriptor ->
                 try {
@@ -20,6 +24,7 @@ object AudioPluginLV2ResourceBridge {
                 } catch (_: Exception) {
                 }
             }
+            cleanup()
         }
     }
 

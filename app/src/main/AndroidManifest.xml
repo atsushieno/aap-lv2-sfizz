@@ -10,6 +10,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true">
+        <activity android:name="org.androidaudioplugin.samples.aap_sfizz.SfzFoldersActivity" android:exported="false" />
         <activity android:name="org.androidaudioplugin.samples.aap_sfizz.SfizzActivity"
             android:exported="true">
             <intent-filter>

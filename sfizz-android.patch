@@ -331,7 +331,7 @@ index 916c5ccf..205988f6 100644
 +}
 +#endif
 diff --git a/src/sfizz/FilePool.cpp b/src/sfizz/FilePool.cpp
-index e15be0f4..4b18cd52 100644
+index e15be0f4..53aad9ee 100644
 --- a/src/sfizz/FilePool.cpp
 +++ b/src/sfizz/FilePool.cpp
 @@ -167,6 +167,13 @@ sfz::FilePool::~FilePool()
@@ -340,7 +340,7 @@ index e15be0f4..4b18cd52 100644
  {
 +    if (resources) {
 +        if (fs::path(filename).is_absolute()) return false;
-+        const auto* r = resources->find((rootDirectory / filename).generic_string());
++        const auto* r = resources->find((rootDirectory / filename).generic_string(), true, false);
 +        if (!r) return false;
 +        filename = (fs::path("/") / r->name).lexically_relative(rootDirectory).generic_string();
 +        return true;
@@ -491,15 +491,16 @@ index f76e2783..76a25b7a 100644
       * @brief Get the number of preloaded sample files
 diff --git a/src/sfizz/ResourceSet.h b/src/sfizz/ResourceSet.h
 new file mode 100644
-index 00000000..03b2ebf2
+index 00000000..ffb59137
 --- /dev/null
 +++ b/src/sfizz/ResourceSet.h
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,91 @@
 +// SPDX-License-Identifier: BSD-2-Clause
 +#pragma once
 +#include "../sfizz_resources.h"
 +#include <algorithm>
 +#include <memory>
++#include <mutex>
 +#include <string>
 +#include <unordered_map>
 +#include <stdexcept>
@@ -510,17 +511,21 @@ index 00000000..03b2ebf2
 +public:
 +    explicit ResourceSet(const sfizz_resource_pack_t& pack)
 +        : owner_(pack.owner, pack.release ? pack.release : [](void*) {}) {
-+        if (pack.version != 1 || !pack.entry || !pack.resources || !pack.count || pack.count > 65536)
++        if ((pack.version != 1 && pack.version != 2) || !pack.entry || !pack.resources || !pack.count || pack.count > 65536)
 +            throw std::invalid_argument("Invalid resource pack");
++        if (pack.version == 2) {
++            open_ = pack.open;
++            if (!open_) throw std::invalid_argument("Missing resource opener");
++        }
 +        entry = normalize(pack.entry);
 +        for (size_t i = 0; i < pack.count; ++i) {
 +            const auto& r = pack.resources[i];
-+            if (!r.name || !r.data || !r.size) throw std::invalid_argument("Empty resource");
++            if (!r.name || (!open_ && (!r.data || !r.size))) throw std::invalid_argument("Empty resource");
 +            std::string name = normalize(r.name);
 +            if (name != r.name || !files_.emplace(name, r).second)
 +                throw std::invalid_argument("Noncanonical or duplicate resource name");
 +        }
-+        if (!find(entry, false)) throw std::invalid_argument("Missing entry SFZ");
++        if (!find(entry, false, false)) throw std::invalid_argument("Missing entry SFZ");
 +    }
 +    static std::string normalize(std::string path) {
 +        if (path.empty() || path.size() > 4096 || path[0] == '/' || path.find(':') != std::string::npos)
@@ -543,28 +548,42 @@ index 00000000..03b2ebf2
 +        if (result.empty()) throw std::invalid_argument("Empty resource path");
 +        return result;
 +    }
-+    const sfizz_resource_t* find(std::string path, bool caseFallback = true) const noexcept {
++    const sfizz_resource_t* find(std::string path, bool caseFallback = true, bool open = true) const noexcept {
 +        try {
++            std::lock_guard<std::mutex> lock(mutex_);
 +            // Engine paths live beneath a synthetic root; never touch the filesystem.
 +            if (!path.empty() && path[0] == '/') path.erase(0, 1);
 +            path = normalize(path);
 +            auto it = files_.find(path);
-+            if (it != files_.end()) return &it->second;
++            auto ensureOpen = [&](sfizz_resource_t* resource) -> const sfizz_resource_t* {
++                if (resource && open && !resource->data) {
++                    const void* data = nullptr;
++                    size_t size = 0;
++                    if (!open_ || !open_(owner_.get(), resource->name, &data, &size) || !data || !size)
++                        return nullptr;
++                    resource->data = data;
++                    resource->size = size;
++                }
++                return resource;
++            };
++            if (it != files_.end()) return ensureOpen(&it->second);
 +            if (!caseFallback) return nullptr;
 +            auto lower = [](std::string s) { for (char& c : s) if (c >= 'A' && c <= 'Z') c += 'a'-'A'; return s; };
 +            const auto folded = lower(path);
-+            const sfizz_resource_t* found = nullptr;
-+            for (const auto& item : files_) if (lower(item.first) == folded) {
++            sfizz_resource_t* found = nullptr;
++            for (auto& item : files_) if (lower(item.first) == folded) {
 +                if (found) return nullptr; // ambiguous case, never depend on enumeration order
 +                found = &item.second;
 +            }
-+            return found;
++            return ensureOpen(found);
 +        } catch (...) { return nullptr; }
 +    }
 +    std::string entry;
 +private:
 +    std::shared_ptr<void> owner_;
-+    std::unordered_map<std::string, sfizz_resource_t> files_;
++    mutable std::mutex mutex_;
++    mutable std::unordered_map<std::string, sfizz_resource_t> files_;
++    int (*open_)(void*, const char*, const void**, size_t*) = nullptr;
 +};
 +}
 diff --git a/src/sfizz/Synth.cpp b/src/sfizz/Synth.cpp
@@ -715,10 +734,10 @@ index fb82435b..a000d18d 100644
 +}
 diff --git a/src/sfizz_resources.h b/src/sfizz_resources.h
 new file mode 100644
-index 00000000..de37b1f6
+index 00000000..6f1c26b9
 --- /dev/null
 +++ b/src/sfizz_resources.h
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,45 @@
 +// SPDX-License-Identifier: BSD-2-Clause
 +#pragma once
 +#include <stddef.h>
@@ -742,6 +761,10 @@ index 00000000..de37b1f6
 +    size_t count;
 +    void* owner;
 +    void (*release)(void*);
++    /* Version 2: resources is a names-only index; open supplies bytes on demand.
++     * Called only from control/loading threads. Bytes remain valid until release.
++     * Version 1 callers need not supply this appended field. */
++    int (*open)(void* owner, const char* name, const void** data, size_t* size);
 +} sfizz_resource_pack_t;
 +#define SFIZZ_RESOURCE_FEATURE "urn:org.androidaudioplugin:sfz-resources:1"
 +#define SFIZZ_RESOURCE_INTERFACE "urn:org.androidaudioplugin:sfz-selection:1"

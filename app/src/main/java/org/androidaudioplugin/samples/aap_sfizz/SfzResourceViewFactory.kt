@@ -1,6 +1,8 @@
 package org.androidaudioplugin.samples.aap_sfizz
 
 import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.util.Size
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +35,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,7 +62,17 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
     override fun createView(context: Context, pluginId: String, instanceId: Int): View {
         // Resolve inside AAP's instance scope, before callbacks leave createNativeView().
         val service = AudioPluginServiceHelper.getServiceInstance(pluginId)
-        val parameterView = ComposeAudioPluginViewFactory().createView(context, pluginId, instanceId)
+        val parameterView = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            createParameterView(context, pluginId, instanceId)
+        } else {
+            ComposeView(context).apply {
+                setContent {
+                    MaterialTheme {
+                        Text("Plugin parameters require Android 11 or later.")
+                    }
+                }
+            }
+        }
         parameterView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         return ComposeView(context).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
@@ -88,7 +102,8 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                         }
                     }
 
-                    LaunchedEffect(Unit) { discover() }
+                    val folderRevision by SfzFolders.revision.collectAsState()
+                    LaunchedEffect(folderRevision) { discover() }
                     Surface(Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -156,6 +171,12 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                                 Button(onClick = { discover() }, enabled = !loading, modifier = Modifier.fillMaxWidth()) {
                                     Text("Find SFZ packs")
                                 }
+                                Button(onClick = {
+                                    context.startActivity(Intent(context, SfzFoldersActivity::class.java)
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                }, enabled = !loading, modifier = Modifier.fillMaxWidth()) {
+                                    Text("SFZ folders")
+                                }
                             }
                             HorizontalDivider()
                             AndroidView(
@@ -168,4 +189,8 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
             }
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun createParameterView(context: Context, pluginId: String, instanceId: Int): View =
+        ComposeAudioPluginViewFactory().createView(context, pluginId, instanceId)
 }
