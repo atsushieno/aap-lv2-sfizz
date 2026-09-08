@@ -12,6 +12,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace {
@@ -38,6 +39,7 @@ struct Pack {
     std::vector<std::string> names;
     std::vector<std::unique_ptr<Mapping>> mappings;
     std::vector<sfizz_resource_t> resources;
+    std::unordered_map<std::string, std::pair<const void*, size_t>> opened;
     jobject snapshot = nullptr;
     ~Pack() {
         if (!snapshot) return;
@@ -64,6 +66,12 @@ std::string stringValue(JNIEnv* env, jstring value) {
 // for the lifetime of the instrument and its background decoder jobs.
 int openIndexedResource(void* owner, const char* name, const void** data, size_t* size) {
     auto* pack = static_cast<Pack*>(owner);
+    auto existing = pack->opened.find(name);
+    if (existing != pack->opened.end()) {
+        *data = existing->second.first;
+        *size = existing->second.second;
+        return 1;
+    }
     JNIEnv* env = nullptr;
     const bool attached = javaVm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK;
     if (attached && javaVm->AttachCurrentThread(&env, nullptr) != JNI_OK) return 0;
@@ -101,6 +109,7 @@ int openIndexedResource(void* owner, const char* name, const void** data, size_t
         pack->mappings.push_back(std::move(mapping));
         *data = static_cast<const char*>(address) + displacement;
         *size = static_cast<size_t>(length);
+        pack->opened.emplace(name, std::make_pair(*data, *size));
         success = true;
     } catch (const std::exception& error) {
         __android_log_print(ANDROID_LOG_ERROR, "AAP.SFZ", "Opening document %s failed: %s", name, error.what());

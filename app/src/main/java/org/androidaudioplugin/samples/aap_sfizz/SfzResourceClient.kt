@@ -77,7 +77,7 @@ object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
                 val entry = session.entryPath
                 while (true) {
                     val page = session.listResources(names.size, 128)
-                    require(page.size <= 128 && names.size + page.size <= 2048) { "Pack exceeds 2048 resources" }
+                    require(page.size <= 128 && names.size + page.size <= 65536) { "Pack exceeds 65536 resources" }
                     names.addAll(page)
                     if (page.size < 128) break
                 }
@@ -85,6 +85,7 @@ object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
                 names.forEach { descriptors += session.openResource(it) }
                 AudioPluginLV2ResourceBridge.Snapshot(entry, names.toTypedArray(), descriptors.toTypedArray())
             } catch (e: Exception) {
+                android.util.Log.e("AAP.SFZ", "Opening resource pack $identity failed", e)
                 descriptors.forEach { try { it.close() } catch (_: Exception) {} }
                 throw e
             } finally { try { session.close() } catch (_: Exception) {} }

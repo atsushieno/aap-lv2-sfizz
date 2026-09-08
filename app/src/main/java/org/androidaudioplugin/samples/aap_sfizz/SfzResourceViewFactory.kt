@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
@@ -62,18 +63,6 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
     override fun createView(context: Context, pluginId: String, instanceId: Int): View {
         // Resolve inside AAP's instance scope, before callbacks leave createNativeView().
         val service = AudioPluginServiceHelper.getServiceInstance(pluginId)
-        val parameterView = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            createParameterView(context, pluginId, instanceId)
-        } else {
-            ComposeView(context).apply {
-                setContent {
-                    MaterialTheme {
-                        Text("Plugin parameters require Android 11 or later.")
-                    }
-                }
-            }
-        }
-        parameterView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         return ComposeView(context).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
@@ -81,6 +70,7 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                     var choices by remember { mutableStateOf(emptyList<SfzResourceClient.Choice>()) }
                     var status by remember { mutableStateOf("Finding SFZ packs…") }
                     var loading by remember { mutableStateOf(true) }
+                    var loadingResource by remember { mutableStateOf(false) }
                     var selectedIdentity by remember { mutableStateOf<String?>(null) }
                     var selectorExpanded by remember { mutableStateOf(false) }
                     val scope = rememberCoroutineScope()
@@ -144,6 +134,7 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                                                     // The visible row and resource use the same zero-based index.
                                                     val clicked = choices[position]
                                                     loading = true
+                                                    loadingResource = true
                                                     status = "Loading ${clicked.label}…"
                                                     scope.launch {
                                                         val result = withContext(Dispatchers.IO) {
@@ -160,6 +151,7 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                                                         }.onFailure {
                                                             status = it.message ?: "SFZ loading failed"
                                                         }
+                                                        loadingResource = false
                                                         loading = false
                                                     }
                                                 }
@@ -179,10 +171,14 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                                 }
                             }
                             HorizontalDivider()
-                            AndroidView(
-                                factory = { parameterView },
-                                modifier = Modifier.fillMaxWidth().weight(1f),
-                            )
+                            if (!loadingResource) {
+                                AndroidView(
+                                    factory = { createParameterViewCompat(context, pluginId, instanceId) },
+                                    modifier = Modifier.fillMaxWidth().weight(1f),
+                                )
+                            } else {
+                                Spacer(Modifier.fillMaxWidth().weight(1f))
+                            }
                         }
                     }
                 }
@@ -193,4 +189,15 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
     @RequiresApi(Build.VERSION_CODES.R)
     private fun createParameterView(context: Context, pluginId: String, instanceId: Int): View =
         ComposeAudioPluginViewFactory().createView(context, pluginId, instanceId)
+
+    private fun createParameterViewCompat(context: Context, pluginId: String, instanceId: Int): View =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            createParameterView(context, pluginId, instanceId)
+        } else {
+            ComposeView(context).apply {
+                setContent {
+                    MaterialTheme { Text("Plugin parameters require Android 11 or later.") }
+                }
+            }
+        }
 }
