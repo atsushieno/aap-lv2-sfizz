@@ -35,7 +35,8 @@ class SfzFoldersActivity : ComponentActivity() {
                         LazyColumn(Modifier.weight(1f)) {
                             items(roots, key = { it.toString() }) { uri ->
                                 Column {
-                                    Text(android.provider.DocumentsContract.getTreeDocumentId(uri))
+                                    Text(SfzFolders.displayName(uri), style = MaterialTheme.typography.titleMedium)
+                                    Text(android.provider.DocumentsContract.getTreeDocumentId(uri), style = MaterialTheme.typography.bodySmall)
                                     TextButton(onClick = { SfzFolders.remove(this@SfzFoldersActivity, uri) }) { Text("Remove folder") }
                                 }
                             }

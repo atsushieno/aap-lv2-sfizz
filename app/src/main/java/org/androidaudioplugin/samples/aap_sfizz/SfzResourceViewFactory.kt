@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -73,7 +73,35 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                     var loadingResource by remember { mutableStateOf(false) }
                     var selectedIdentity by remember { mutableStateOf<String?>(null) }
                     var selectorExpanded by remember { mutableStateOf(false) }
+                    var expandedNodes by remember { mutableStateOf(emptySet<String>()) }
                     val scope = rememberCoroutineScope()
+
+                    val forest = remember(choices) { buildSfzForest(choices) }
+                    val rows = remember(forest, expandedNodes) { flattenSfzForest(forest, expandedNodes) }
+
+                    fun loadChoice(clicked: SfzResourceClient.Choice) {
+                        loading = true
+                        loadingResource = true
+                        status = "Loading ${clicked.label}…"
+                        scope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    check(AudioPluginLV2ResourceBridge.load(service, instanceId, clicked.identity)) {
+                                        "Unable to load instrument; check the provider and sample format."
+                                    }
+                                }
+                            }
+                            result.onSuccess {
+                                selectedIdentity = clicked.identity
+                                status = "Loaded: ${clicked.label}"
+                                selectorExpanded = false
+                            }.onFailure {
+                                status = it.message ?: "SFZ loading failed"
+                            }
+                            loadingResource = false
+                            loading = false
+                        }
+                    }
 
                     fun discover() {
                         loading = true
@@ -82,6 +110,7 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                             runCatching { withContext(Dispatchers.IO) { SfzResourceClient.discover() } }
                                 .onSuccess {
                                     choices = it
+                                    expandedNodes = rootKeys(buildSfzForest(it))
                                     status = if (it.isEmpty())
                                         "No SFZ packs installed. Install an SFZ provider APK."
                                     else
@@ -118,44 +147,44 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
                             if (selectorExpanded) {
                                 Text(status, style = MaterialTheme.typography.titleMedium)
                                 LazyColumn(
-                                    modifier = Modifier.fillMaxWidth().height(112.dp),
+                                    modifier = Modifier.fillMaxWidth().height(240.dp),
                                 ) {
-                                    itemsIndexed(choices, key = { _, choice -> choice.identity }) { position, choice ->
-                                        val selected = choice.identity == selectedIdentity
+                                    items(rows, key = { it.key }) { row ->
+                                        val node = row.node
+                                        val selected = node is SfzLeaf && node.choice.identity == selectedIdentity
+                                        val prefix = when {
+                                            node is SfzDir && !row.expandable -> "  "
+                                            node is SfzDir && row.key in expandedNodes -> "▼ "
+                                            node is SfzDir -> "▶ "
+                                            else -> "• "
+                                        }
                                         Text(
-                                            text = choice.label,
+                                            text = prefix + node.name,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            style = if (node is SfzDir) MaterialTheme.typography.titleSmall
+                                                else MaterialTheme.typography.bodyMedium,
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .background(
                                                     if (selected) MaterialTheme.colorScheme.secondaryContainer
                                                     else MaterialTheme.colorScheme.surface
                                                 )
-                                                .clickable(enabled = !loading) {
-                                                    // The visible row and resource use the same zero-based index.
-                                                    val clicked = choices[position]
-                                                    loading = true
-                                                    loadingResource = true
-                                                    status = "Loading ${clicked.label}…"
-                                                    scope.launch {
-                                                        val result = withContext(Dispatchers.IO) {
-                                                            runCatching {
-                                                                check(AudioPluginLV2ResourceBridge.load(service, instanceId, clicked.identity)) {
-                                                                    "Unable to load instrument; check the provider and sample format."
-                                                                }
-                                                            }
-                                                        }
-                                                        result.onSuccess {
-                                                            selectedIdentity = clicked.identity
-                                                            status = "Loaded: ${clicked.label}"
-                                                            selectorExpanded = false
-                                                        }.onFailure {
-                                                            status = it.message ?: "SFZ loading failed"
-                                                        }
-                                                        loadingResource = false
-                                                        loading = false
+                                                .clickable(enabled = !loading || node is SfzDir) {
+                                                    when {
+                                                        node is SfzDir && row.expandable ->
+                                                            expandedNodes = if (row.key in expandedNodes)
+                                                                expandedNodes - row.key
+                                                            else expandedNodes + row.key
+                                                        node is SfzLeaf && !loading -> loadChoice(node.choice)
                                                     }
                                                 }
-                                                .padding(horizontal = 12.dp, vertical = 14.dp),
+                                                .padding(
+                                                    start = (12 + row.depth * 16).dp,
+                                                    end = 12.dp,
+                                                    top = 10.dp,
+                                                    bottom = 10.dp,
+                                                ),
                                         )
                                         HorizontalDivider()
                                     }

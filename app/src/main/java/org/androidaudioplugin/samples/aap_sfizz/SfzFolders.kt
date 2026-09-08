@@ -62,11 +62,22 @@ object SfzFolders {
         return result.sortedBy { it.path }
     }
 
+    /** A human-friendly name for a registered tree, e.g. "primary:Music/SFZ" -> "SFZ". */
+    fun displayName(tree: Uri): String =
+        DocumentsContract.getTreeDocumentId(tree).substringAfterLast(':').substringAfterLast('/')
+            .ifEmpty { DocumentsContract.getTreeDocumentId(tree) }
+
     fun discover(context: Context): List<SfzResourceClient.Choice> = roots(context).flatMap { tree ->
+        val group = displayName(tree)
         documents(context, tree).filter { it.path.endsWith(".sfz", ignoreCase = true) }.map {
-            SfzResourceClient.Choice(it.path, Uri.Builder().scheme("aap-sfz-folder")
-                .authority("local").appendQueryParameter("tree", tree.toString())
-                .appendQueryParameter("entry", it.path).build().toString())
+            SfzResourceClient.Choice(
+                label = it.path.substringAfterLast('/'),
+                identity = Uri.Builder().scheme("aap-sfz-folder")
+                    .authority("local").appendQueryParameter("tree", tree.toString())
+                    .appendQueryParameter("entry", it.path).build().toString(),
+                group = group,
+                path = it.path,
+            )
         }
     }
 

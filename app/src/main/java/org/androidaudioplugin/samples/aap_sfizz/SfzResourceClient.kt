@@ -11,7 +11,14 @@ import java.util.concurrent.TimeUnit
 object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
     private lateinit var context: Context
     const val ACTION = "org.androidaudioplugin.SfzResourceService.V1"
-    data class Choice(val label: String, val identity: String)
+    /** [group] is the tree root (a registered folder or a provider); [path] is the "/"-separated
+     * location of the SFZ file under that root, used to present the choices as a directory tree. */
+    data class Choice(
+        val label: String,
+        val identity: String,
+        val group: String = "",
+        val path: String = label,
+    )
     fun initialize(ctx: Context) {
         context = ctx.applicationContext
         AudioPluginLV2ResourceBridge.initialize(this)
@@ -40,8 +47,12 @@ object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
     }
     fun discover(): List<Choice> {
         val result = mutableListOf<Choice>()
-        for (match in context.packageManager.queryIntentServices(Intent(ACTION), 0)) {
+        val pm = context.packageManager
+        for (match in pm.queryIntentServices(Intent(ACTION), 0)) {
             val component = ComponentName(match.serviceInfo.packageName, match.serviceInfo.name)
+            val providerName = runCatching {
+                pm.getApplicationLabel(pm.getApplicationInfo(component.packageName, 0)).toString()
+            }.getOrDefault(component.packageName)
             connected(component) { service ->
                 var offset = 0
                 while (offset < 4096) {
@@ -54,7 +65,9 @@ object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
                         val identity = Uri.Builder().scheme("aap-sfz").authority(component.packageName)
                             .appendPath(component.className).appendPath(id).appendQueryParameter("revision", revision).build().toString()
                         require(identity.length <= 4096)
-                        result += Choice(item.getString("label") ?: id, identity)
+                        val label = item.getString("label") ?: id
+                        result += Choice(label, identity, group = providerName,
+                            path = item.getString("path")?.takeIf { it.isNotEmpty() } ?: label)
                     }
                     offset += page.size
                     if (page.size < 128) break

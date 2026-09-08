@@ -18,6 +18,9 @@ abstract class AssetSfzResourceService : Service() {
             require(offset >= 0 && limit in 1..128)
             return instruments.drop(offset).take(limit).map { i -> Bundle().apply {
                 putString("id", i.id); putString("label", i.label); putString("revision", i.revision)
+                // Optional (protocol v1, additive): the asset-relative entry path, so hosts can
+                // present provider instruments in their asset directory tree instead of a flat list.
+                putString("path", i.entry)
             } }.toTypedArray()
         }
         override fun openInstrument(instrumentId: String, revision: String): ISfzResourceSession {
