@@ -295,6 +295,36 @@ namespace {
 const sfizz_resource_host_t resourceHost {nullptr, aap_sfizz_resource_open};
 }
 
+// dlsym target for sfizz.cpp: lets a plugin instance find the resource host with
+// no LV2 feature and no prior UI interaction, as long as this library is loaded
+// in the process (it is, via androidx Startup in the plugin service process).
+extern "C" __attribute__((visibility("default")))
+const sfizz_resource_host_t* aap_sfizz_default_resource_host() {
+    return &resourceHost;
+}
+
+namespace {
+const sfizz_resource_interface_t* resolveSfizzApi(jlong nativeService, jint instanceId,
+                                                 void** outHandle) {
+    if (!nativeService)
+        return nullptr;
+    auto* service = reinterpret_cast<aap::PluginService*>(nativeService);
+    auto* instance = service->getLocalInstance(instanceId);
+    if (!instance || !instance->getPlugin())
+        return nullptr;
+    auto* context = static_cast<aaplv2bridge::AAPLV2PluginContext*>(
+            instance->getPlugin()->plugin_specific);
+    if (!context || !context->instance)
+        return nullptr;
+    const auto* api = static_cast<const sfizz_resource_interface_t*>(
+            lilv_instance_get_extension_data(context->instance, SFIZZ_RESOURCE_INTERFACE));
+    if (!api || !api->set_host || !api->load)
+        return nullptr;
+    *outHandle = lilv_instance_get_handle(context->instance);
+    return api;
+}
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_org_androidaudioplugin_samples_aap_1sfizz_AudioPluginLV2ResourceBridge_initialize(
         JNIEnv* env, jobject, jobject provider) {
@@ -311,19 +341,10 @@ Java_org_androidaudioplugin_samples_aap_1sfizz_AudioPluginLV2ResourceBridge_load
     if (!nativeService || !identity)
         return JNI_FALSE;
     try {
-        auto* service = reinterpret_cast<aap::PluginService*>(nativeService);
-        auto* instance = service->getLocalInstance(instanceId);
-        if (!instance || !instance->getPlugin())
+        void* handle = nullptr;
+        const auto* api = resolveSfizzApi(nativeService, instanceId, &handle);
+        if (!api)
             return JNI_FALSE;
-        auto* context = static_cast<aaplv2bridge::AAPLV2PluginContext*>(
-                instance->getPlugin()->plugin_specific);
-        if (!context || !context->instance)
-            return JNI_FALSE;
-        const auto* api = static_cast<const sfizz_resource_interface_t*>(
-                lilv_instance_get_extension_data(context->instance, SFIZZ_RESOURCE_INTERFACE));
-        if (!api || !api->set_host || !api->load)
-            return JNI_FALSE;
-        void* handle = lilv_instance_get_handle(context->instance);
         api->set_host(handle, &resourceHost);
         const auto resourceIdentity = stringValue(env, identity);
         const bool loaded = api->load(handle, resourceIdentity.c_str());

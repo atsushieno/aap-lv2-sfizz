@@ -132,19 +132,58 @@ index 37305afd..c06d359d 100644
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
 diff --git a/plugins/lv2/sfizz.cpp b/plugins/lv2/sfizz.cpp
-index 8fc65ba9..f47c81ec 100644
+index 8fc65ba9..e10334f3 100644
 --- a/plugins/lv2/sfizz.cpp
 +++ b/plugins/lv2/sfizz.cpp
-@@ -74,6 +74,8 @@ enum
+@@ -43,6 +43,9 @@
+ #include <string.h>
+ 
+ #include <memory>
++#include <atomic>
++#include <string>
++#include <dlfcn.h>
+ 
+ #define CHANNEL_MASK 0x0F
+ #define MIDI_CHANNEL(byte) (byte & CHANNEL_MASK)
+@@ -74,6 +77,37 @@ enum
  static bool
  sfizz_lv2_load_file(sfizz_plugin_t *self, const char *file_path);
  
 +static void sfizz_lv2_update_sfz_info(sfizz_plugin_t *self);
 +
++// Fallback host for instances not given one via SFIZZ_RESOURCE_FEATURE / set_host().
++static std::atomic<const sfizz_resource_host_t*> s_default_resource_host{nullptr};
++
++static const sfizz_resource_host_t* discover_default_resource_host()
++{
++    if (auto* host = s_default_resource_host.load(std::memory_order_acquire))
++        return host;
++    using getter_t = const sfizz_resource_host_t* (*)();
++    auto getter = reinterpret_cast<getter_t>(dlsym(RTLD_DEFAULT, "aap_sfizz_default_resource_host"));
++    if (!getter) {
++        // RTLD_DEFAULT does not reach a sibling library loaded via System.loadLibrary;
++        // grab an explicit handle to the already-loaded companion library instead.
++        if (void* lib = dlopen("libaap-lv2-sfizz-resources.so", RTLD_NOLOAD | RTLD_NOW))
++            getter = reinterpret_cast<getter_t>(dlsym(lib, "aap_sfizz_default_resource_host"));
++    }
++    if (getter) {
++        if (auto* host = getter()) {
++            s_default_resource_host.store(host, std::memory_order_release);
++            return host;
++        }
++    }
++    return nullptr;
++}
++
++static const sfizz_resource_host_t* effective_resource_host(sfizz_plugin_t *self)
++{
++    return self->resource_host ? self->resource_host : discover_default_resource_host();
++}
++
  static bool
  sfizz_lv2_load_scala_file(sfizz_plugin_t *self, const char *file_path);
  
-@@ -542,6 +544,8 @@ instantiate(const LV2_Descriptor *descriptor,
+@@ -542,6 +576,8 @@ instantiate(const LV2_Descriptor *descriptor,
      {
          const char *uri = (**f).URI;
          void *data = (**f).data;
@@ -153,7 +192,17 @@ index 8fc65ba9..f47c81ec 100644
  
          // lv2_log_note(&self->logger, "Feature URI: %s\n", (**f).URI);
  
-@@ -1447,12 +1451,50 @@ sfizz_lv2_load_file(sfizz_plugin_t *self, const char *file_path)
+@@ -570,6 +606,9 @@ instantiate(const LV2_Descriptor *descriptor,
+             self->midnam = (LV2_Midnam *)data;
+     }
+ 
++    if (!self->resource_host)
++        self->resource_host = discover_default_resource_host();
++
+     // Setup the loggers
+     lv2_log_logger_init(&self->logger, self->map, self->log);
+ 
+@@ -1447,12 +1486,60 @@ sfizz_lv2_load_file(sfizz_plugin_t *self, const char *file_path)
      }
  
      ///
@@ -177,13 +226,14 @@ index 8fc65ba9..f47c81ec 100644
 +static int load_resource(void* handle, const char* identity)
 +{
 +    auto* self = static_cast<sfizz_plugin_t*>(handle);
-+    if (!identity || strlen(identity) > 4096 || !self->resource_host) {
++    const sfizz_resource_host_t* host = effective_resource_host(self);
++    if (!identity || strlen(identity) > 4096 || !host) {
 +        lv2_log_error(&self->logger, "[sfizz] resource load rejected: missing host or invalid identity\n");
 +        return 0;
 +    }
 +    std::lock_guard<std::mutex> control(self->resource_mutex);
 +    sfizz_resource_pack_t pack {};
-+    if (!self->resource_host->open(self->resource_host->handle, identity, &pack)) return 0;
++    if (!host->open(host->handle, identity, &pack)) return 0;
 +    spin_mutex_lock(self->synth_mutex);
 +    bool ok = load_resource_snapshot(self, identity, pack);
 +    spin_mutex_unlock(self->synth_mutex);
@@ -192,7 +242,16 @@ index 8fc65ba9..f47c81ec 100644
 +
 +static void set_resource_host(void* handle, const sfizz_resource_host_t* host)
 +{
-+    static_cast<sfizz_plugin_t*>(handle)->resource_host = host;
++    auto* self = static_cast<sfizz_plugin_t*>(handle);
++    self->resource_host = host;
++    if (!host)
++        return;
++    s_default_resource_host.store(host, std::memory_order_release);
++    // Complete a selection restored from state before a host existed.
++    if (!self->resource_identity.empty()) {
++        std::string pending = self->resource_identity;
++        load_resource(handle, pending.c_str());
++    }
 +}
 +
 +static int resource_region_count(void* handle)
@@ -204,7 +263,7 @@ index 8fc65ba9..f47c81ec 100644
  static bool
  sfizz_lv2_load_scala_file(sfizz_plugin_t *self, const char *file_path)
  {
-@@ -1493,12 +1535,28 @@ restore(LV2_Handle instance,
+@@ -1493,12 +1580,32 @@ restore(LV2_Handle instance,
      // Set default values
      self->last_keyswitch = -1;
      sfizz_lv2_get_default_sfz_path(self, self->sfz_file_path, MAX_PATH_SIZE);
@@ -215,6 +274,7 @@ index 8fc65ba9..f47c81ec 100644
      uint32_t type;
      uint32_t val_flags;
 +    std::string restored_identity;
++    bool had_identity = false;
 +    sfizz_resource_pack_t restored_pack {};
 +    auto identity_urid = self->map->map(self->map->handle, SFIZZ_RESOURCE_STATE);
 +    const void* identity_value = retrieve(handle, identity_urid, &size, &type, &val_flags);
@@ -224,10 +284,13 @@ index 8fc65ba9..f47c81ec 100644
 +            return LV2_STATE_ERR_BAD_TYPE;
 +        restored_identity.assign(static_cast<const char*>(identity_value), size-1);
 +        if (restored_identity.find('\0') != std::string::npos) return LV2_STATE_ERR_BAD_TYPE;
-+        if (!self->resource_host || !self->resource_host->open(self->resource_host->handle,
-+                restored_identity.c_str(), &restored_pack)) {
++        had_identity = true;
++        const sfizz_resource_host_t* rhost = effective_resource_host(self);
++        if (!rhost || !rhost->open(rhost->handle, restored_identity.c_str(), &restored_pack)) {
++            // No host yet or pack unavailable: keep the selection for retry, load empty.
 +            self->resource_identity = restored_identity;
-+            return LV2_STATE_ERR_UNKNOWN;
++            restored_identity.clear();
++            status = LV2_STATE_ERR_UNKNOWN;
 +        }
 +    }
 +    sfizz_lv2_get_default_scala_path(self, self->scala_file_path, MAX_PATH_SIZE);
@@ -236,32 +299,84 @@ index 8fc65ba9..f47c81ec 100644
      const void *value;
      value = retrieve(handle, self->sfizz_sfz_file_uri, &size, &type, &val_flags);
      if (value)
-@@ -1566,7 +1624,8 @@ restore(LV2_Handle instance,
+@@ -1566,7 +1673,29 @@ restore(LV2_Handle instance,
      // Load an empty file to remove the default sine, and then the new file.
      sfizz_load_string(self->synth, "empty.sfz", "");
      self->check_modification = false;
 -    if (sfizz_lv2_load_file(self, self->sfz_file_path))
-+    if (!restored_identity.empty() ? load_resource_snapshot(self, restored_identity, restored_pack)
-+                                   : sfizz_lv2_load_file(self, self->sfz_file_path))
++    if (!restored_identity.empty())
++    {
++        if (load_resource_snapshot(self, restored_identity, restored_pack))
++        {
++            lv2_log_note(&self->logger, "[sfizz] Restoring the instrument %s (%d regions, %zu samples)\n",
++                self->resource_identity.c_str(),
++                sfizz_get_num_regions(self->synth),
++                sfizz_get_num_preloaded_samples(self->synth));
++            self->check_modification = true;
++        }
++        else
++        {
++            lv2_log_error(&self->logger, "[sfizz] Error while restoring the instrument %s\n",
++                restored_identity.c_str());
++        }
++    }
++    else if (had_identity)
++    {
++        lv2_log_note(&self->logger,
++            "[sfizz] Instrument %s is unavailable; kept for retry\n",
++            self->resource_identity.c_str());
++    }
++    else if (sfizz_lv2_load_file(self, self->sfz_file_path))
      {
          lv2_log_note(&self->logger,
              "[sfizz] Restoring the file %s\n", self->sfz_file_path);
-@@ -1632,7 +1691,13 @@ save(LV2_Handle instance,
+@@ -1632,22 +1761,31 @@ save(LV2_Handle instance,
  
      const char *path;
  
 -    // Save the file path
-+    // Resource identities are opaque strings, never LV2 filesystem paths.
+-    path = self->sfz_file_path;
+-    if (map_path)
 +    if (!self->resource_identity.empty()) {
++        // Opaque selection: store only the identity, not sfizz:sfzfile (which still
++        // holds the default path and would restore the wrong instrument).
 +        store(handle, self->map->map(self->map->handle, SFIZZ_RESOURCE_STATE),
 +              self->resource_identity.c_str(), self->resource_identity.size()+1,
 +              self->map->map(self->map->handle, LV2_ATOM__String), LV2_STATE_IS_POD);
 +    }
-+    // Save the legacy path as well for backward compatibility.
-     path = self->sfz_file_path;
-     if (map_path)
++    else
      {
-@@ -1924,6 +1989,10 @@ midnam_free(char *string)
+-        path = map_path->abstract_path(map_path->handle, path);
+-        if (!path)
+-            return LV2_STATE_ERR_UNKNOWN;
++        path = self->sfz_file_path;
++        if (map_path)
++        {
++            path = map_path->abstract_path(map_path->handle, path);
++            if (!path)
++                return LV2_STATE_ERR_UNKNOWN;
++        }
++        store(handle,
++              self->sfizz_sfz_file_uri,
++              path,
++              strlen(path) + 1,
++              self->atom_path_uri,
++              LV2_STATE_IS_POD);
++        if (map_path)
++            free_path->free_path(free_path->handle, (char *)path);
+     }
+-    store(handle,
+-          self->sfizz_sfz_file_uri,
+-          path,
+-          strlen(path) + 1,
+-          self->atom_path_uri,
+-          LV2_STATE_IS_POD);
+-    if (map_path)
+-        free_path->free_path(free_path->handle, (char *)path);
+ 
+     // Save the scala file path
+     path = self->scala_file_path;
+@@ -1924,6 +2062,10 @@ midnam_free(char *string)
  static const void *
  extension_data(const char *uri)
  {
@@ -734,10 +849,10 @@ index fb82435b..a000d18d 100644
 +}
 diff --git a/src/sfizz_resources.h b/src/sfizz_resources.h
 new file mode 100644
-index 00000000..6f1c26b9
+index 00000000..ae4d70ce
 --- /dev/null
 +++ b/src/sfizz_resources.h
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,50 @@
 +// SPDX-License-Identifier: BSD-2-Clause
 +#pragma once
 +#include <stddef.h>
@@ -780,6 +895,11 @@ index 00000000..6f1c26b9
 +    int (*load)(void* instance, const char* identity);
 +    int (*region_count)(void* instance);
 +} sfizz_resource_interface_t;
++
++/* The plugin resolves a process-wide fallback host by dlsym()ing this symbol at
++ * instantiate(); the companion resource library exports it. The pointee must
++ * outlive every plugin instance. */
++extern const sfizz_resource_host_t* aap_sfizz_default_resource_host(void);
 +#ifdef __cplusplus
 +}
 +#endif

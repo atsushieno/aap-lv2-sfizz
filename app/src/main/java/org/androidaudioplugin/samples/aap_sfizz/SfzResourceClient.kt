@@ -6,10 +6,15 @@ import android.net.Uri
 import android.content.res.AssetFileDescriptor
 import org.androidaudioplugin.sfz.ISfzResourceService
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
     private lateinit var context: Context
+    // ServiceConnection callbacks are delivered here, not on the caller's Looper,
+    // so open() can be driven synchronously from a state restore that happens to
+    // run on the host's main thread without deadlocking on the bind.
+    private val bindCallbacks = Executors.newSingleThreadExecutor { Thread(it, "sfz-resource-bind") }
     const val ACTION = "org.androidaudioplugin.SfzResourceService.V1"
     /** [group] is the tree root (a registered folder or a provider); [path] is the "/"-separated
      * location of the SFZ file under that root, used to present the choices as a directory tree. */
@@ -24,7 +29,6 @@ object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
         AudioPluginLV2ResourceBridge.initialize(this)
     }
     private fun <T> connected(component: ComponentName, block: (ISfzResourceService) -> T): T {
-        check(Looper.myLooper() != Looper.getMainLooper()) { "Resource IPC must run off the UI/audio thread" }
         val ready = CountDownLatch(1)
         var remote: ISfzResourceService? = null
         val connection = object : ServiceConnection {
@@ -35,7 +39,7 @@ object SfzResourceClient : AudioPluginLV2ResourceBridge.Provider {
             override fun onNullBinding(name: ComponentName) { ready.countDown() }
             override fun onBindingDied(name: ComponentName) { ready.countDown() }
         }
-        check(context.bindService(Intent(ACTION).setComponent(component), connection, Context.BIND_AUTO_CREATE)) {
+        check(context.bindService(Intent(ACTION).setComponent(component), Context.BIND_AUTO_CREATE, bindCallbacks, connection)) {
             "Cannot bind SFZ provider"
         }
         try {
