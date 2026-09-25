@@ -30,7 +30,7 @@ The `:sfz-provider` library module in this repository defines the contract:
 
 Provider requirements:
 
-- Sample and SFZ files must be stored **uncompressed** so `AssetManager.openFd()` can hand out a mappable descriptor. Configure `androidResources { noCompress 'sfz', 'wav', 'flac', 'ogg', 'mp3' }` (see `sample-sfz-provider/build.gradle`).
+- Sample and SFZ files must be stored **uncompressed** so `AssetManager.openFd()` can hand out a mappable descriptor. Configure `androidResources { noCompress += listOf("sfz", "wav", "flac", "ogg", "mp3") }` (see `sample-sfz-provider/build.gradle.kts`).
 - A pack is **immutable**. Bump `revision` whenever any resource bytes or names change; hosts pin a selection to `(instrumentId, revision)`.
 - `assetRoot` is the entire sharing boundary — everything under it (including samples shared between instruments) is listable and openable, and nothing outside it is. Do not point it at an asset directory that also holds confidential data.
 
@@ -71,7 +71,7 @@ $ external/aap-lv2/tools/aap-import-lv2-metadata/build/aap-import-lv2-metadata a
 
 Note that the resources may be relocated; they sometimes do.
 
-`app` directory directly references sfizz's own `CMakeLists.txt` from `build.gradle`. Though note that sfizz itself is patched during source preparation.
+`app` directory directly references sfizz's own `CMakeLists.txt` from `build.gradle.kts`. Though note that sfizz itself is patched during source preparation.
 
 ## Licensing notice
 
