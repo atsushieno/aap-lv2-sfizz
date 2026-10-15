@@ -34,7 +34,7 @@ Inside the plugin process, `SoundpackResources` opens a selection with `Soundpac
 
 See our [GitHub Actions script](.github/workflows/actions.yml) for the normative setup.
 
-For local desktop development, prepare sfizz, build the local aap-lv2 submodule into Maven Local, then build this app. Until their first release, the soundpack libraries also come from Maven Local: run `./gradlew publishToMavenLocal` in soundpack-provider-for-android first.
+For local desktop development, prepare sfizz, build the local aap-lv2 and soundpack-provider-for-android submodules into Maven Local, then build this app:
 
 ```
 $ scripts/prepare-sources.sh
@@ -42,6 +42,8 @@ $ cd external/aap-lv2/external/aap-core
 $ ./gradlew publishToMavenLocal
 $ cd ../..
 $ ./gradlew :androidaudioplugin-lv2:build :androidaudioplugin-lv2:publishToMavenLocal
+$ cd ../soundpack-provider-for-android
+$ ./gradlew publishToMavenLocal
 $ cd ../..
 $ ./gradlew build bundle
 ```

@@ -10,3 +10,6 @@
 [submodule "external/SplendidGrandPiano"]
 	path = external/SplendidGrandPiano
 	url = https://github.com/sfzinstruments/SplendidGrandPiano.git
+[submodule "external/soundpack-provider-for-android"]
+	path = external/soundpack-provider-for-android
+	url = https://github.com/atsushieno/soundpack-provider-for-android
