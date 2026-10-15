@@ -15,7 +15,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "aap-lv2-sfizz"
-include(":app", ":sfz-provider", ":sample-sfz-provider")
+include(":app")
 
 //  If you want to test aap-core and aap-lv2 locally, enable these local references
 //  (along with build.gradle.kts changes)

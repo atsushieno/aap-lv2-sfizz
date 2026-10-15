@@ -61,7 +61,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     androidResources {
-        // Resource providers must be able to return seekable AssetFileDescriptors.
+        // The bundled piano is served as descriptor ranges of the APK (soundpack_sfz.xml).
         noCompress += listOf("sfz", "wav", "flac", "ogg", "mp3", "txt", "md", "git", "gitattributes")
     }
 }
@@ -70,7 +70,10 @@ dependencies {
     implementation (libs.activity.compose)
     implementation ("androidx.compose.material3:material3:1.4.0")
     implementation (libs.aap.lv2)
-    implementation (project(":sfz-provider"))
+    // SFZ content from pack apps, this app's own folders and the Soundpack Manager
+    // (soundpack-provider-for-android; in Maven Local until its V1 release).
+    implementation ("org.androidaudioplugin.soundpack:soundpack-host-ui:0.1.0-dev")
+    implementation ("org.androidaudioplugin.soundpack:soundpack-ui-compose:0.1.0-dev")
     implementation (libs.aap.core)
     implementation (libs.aap.midi.device.service)
     implementation (libs.aap.ui.compose)
@@ -79,6 +82,8 @@ dependencies {
     implementation (libs.aap.js.controller)
     androidTestImplementation (libs.aap.testing)
     androidTestImplementation (libs.androidx.rules)
+    androidTestImplementation ("org.androidaudioplugin.soundpack:soundpack-testkit:0.1.0-dev")
+    androidTestImplementation ("androidx.test.uiautomator:uiautomator:2.3.0")
     //  If you want to test aap-core and aap-lv2 locally, switch to these local references
     //  (along with settings.gradle.kts changes)
     /*

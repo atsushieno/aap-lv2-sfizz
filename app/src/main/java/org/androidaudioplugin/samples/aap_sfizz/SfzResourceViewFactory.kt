@@ -5,9 +5,6 @@ import android.content.Intent
 import android.os.Build
 import android.util.Size
 import android.view.View
-import android.view.ViewGroup
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,16 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,10 +35,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.androidaudioplugin.AudioPluginServiceHelper
 import org.androidaudioplugin.AudioPluginViewFactory
+import org.androidaudioplugin.soundpack.client.SoundpackClient
+import org.androidaudioplugin.soundpack.host.ui.SoundpackFoldersActivity
+import org.androidaudioplugin.soundpack.ui.SoundpackPicker
 import org.androidaudioplugin.ui.compose.ComposeAudioPluginViewFactory
 import kotlin.math.roundToInt
 
-/** Hosted in the plugin process by AudioPluginViewService, with an explicit instance ID. */
+/** Hosted in the plugin process by AudioPluginViewService, with an explicit instance ID.
+ * SFZ content comes from installed packs, the folders linked here ("SFZ folders"), and the
+ * folders shared in the Soundpack Manager. */
 class SfzResourceViewFactory : AudioPluginViewFactory() {
     private companion object {
         const val PREFERRED_WIDTH_DP = 420f
@@ -67,135 +65,64 @@ class SfzResourceViewFactory : AudioPluginViewFactory() {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 MaterialTheme {
-                    var choices by remember { mutableStateOf(emptyList<SfzResourceClient.Choice>()) }
-                    var status by remember { mutableStateOf("Finding SFZ packs…") }
-                    var loading by remember { mutableStateOf(true) }
+                    val client = SoundpackResources.client
+                    var status by remember { mutableStateOf("Select an instrument to load it.") }
                     var loadingResource by remember { mutableStateOf(false) }
-                    var selectedIdentity by remember { mutableStateOf<String?>(null) }
+                    var selected by remember { mutableStateOf<SoundpackClient.Entry?>(null) }
                     var selectorExpanded by remember { mutableStateOf(false) }
-                    var expandedNodes by remember { mutableStateOf(emptySet<String>()) }
                     val scope = rememberCoroutineScope()
 
-                    val forest = remember(choices) { buildSfzForest(choices) }
-                    val rows = remember(forest, expandedNodes) { flattenSfzForest(forest, expandedNodes) }
-
-                    fun loadChoice(clicked: SfzResourceClient.Choice) {
-                        loading = true
+                    fun load(entry: SoundpackClient.Entry) {
                         loadingResource = true
-                        status = "Loading ${clicked.label}…"
+                        status = "Loading ${entry.label}…"
+                        val identity = client.identityOf(entry).format()
                         scope.launch {
                             val result = withContext(Dispatchers.IO) {
                                 runCatching {
-                                    check(AudioPluginLV2ResourceBridge.load(service, instanceId, clicked.identity)) {
-                                        "Unable to load instrument; check the provider and sample format."
+                                    check(AudioPluginLV2ResourceBridge.load(service, instanceId, identity)) {
+                                        "Unable to load instrument; check the pack and its sample format."
                                     }
                                 }
                             }
                             result.onSuccess {
-                                selectedIdentity = clicked.identity
-                                status = "Loaded: ${clicked.label}"
+                                selected = entry
+                                status = "Loaded: ${entry.label}"
                                 selectorExpanded = false
                             }.onFailure {
                                 status = it.message ?: "SFZ loading failed"
                             }
                             loadingResource = false
-                            loading = false
                         }
                     }
 
-                    fun discover() {
-                        loading = true
-                        status = "Finding SFZ packs…"
-                        scope.launch {
-                            runCatching { withContext(Dispatchers.IO) { SfzResourceClient.discover() } }
-                                .onSuccess {
-                                    choices = it
-                                    expandedNodes = rootKeys(buildSfzForest(it))
-                                    status = if (it.isEmpty())
-                                        "No SFZ packs installed. Install an SFZ provider APK."
-                                    else
-                                        "Select an instrument to load it."
-                                }
-                                .onFailure { status = it.message ?: "SFZ discovery failed" }
-                            loading = false
-                        }
-                    }
-
-                    val folderRevision by SfzFolders.revision.collectAsState()
-                    LaunchedEffect(folderRevision) { discover() }
                     Surface(Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            val selectedLabel = choices.firstOrNull {
-                                it.identity == selectedIdentity
-                            }?.label
                             OutlinedButton(
                                 onClick = { selectorExpanded = !selectorExpanded },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Text(
-                                    text = if (selectorExpanded)
-                                        "▼ SFZ instruments"
-                                    else
-                                        "▶ SFZ: ${selectedLabel ?: if (loading) "Finding…" else "Select instrument"}",
+                                    text = if (selectorExpanded) "▼ SFZ instruments"
+                                    else "▶ SFZ: ${selected?.label ?: "Select instrument"}",
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             }
                             if (selectorExpanded) {
                                 Text(status, style = MaterialTheme.typography.titleMedium)
-                                LazyColumn(
+                                SoundpackPicker(
+                                    client = client,
+                                    selected = selected?.let { client.identityOf(it) },
+                                    onSelect = { if (!loadingResource) load(it) },
                                     modifier = Modifier.fillMaxWidth().height(240.dp),
-                                ) {
-                                    items(rows, key = { it.key }) { row ->
-                                        val node = row.node
-                                        val selected = node is SfzLeaf && node.choice.identity == selectedIdentity
-                                        val prefix = when {
-                                            node is SfzDir && !row.expandable -> "  "
-                                            node is SfzDir && row.key in expandedNodes -> "▼ "
-                                            node is SfzDir -> "▶ "
-                                            else -> "• "
-                                        }
-                                        Text(
-                                            text = prefix + node.name,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            style = if (node is SfzDir) MaterialTheme.typography.titleSmall
-                                                else MaterialTheme.typography.bodyMedium,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(
-                                                    if (selected) MaterialTheme.colorScheme.secondaryContainer
-                                                    else MaterialTheme.colorScheme.surface
-                                                )
-                                                .clickable(enabled = !loading || node is SfzDir) {
-                                                    when {
-                                                        node is SfzDir && row.expandable ->
-                                                            expandedNodes = if (row.key in expandedNodes)
-                                                                expandedNodes - row.key
-                                                            else expandedNodes + row.key
-                                                        node is SfzLeaf && !loading -> loadChoice(node.choice)
-                                                    }
-                                                }
-                                                .padding(
-                                                    start = (12 + row.depth * 16).dp,
-                                                    end = 12.dp,
-                                                    top = 10.dp,
-                                                    bottom = 10.dp,
-                                                ),
-                                        )
-                                        HorizontalDivider()
-                                    }
-                                }
-                                Button(onClick = { discover() }, enabled = !loading, modifier = Modifier.fillMaxWidth()) {
-                                    Text("Find SFZ packs")
-                                }
+                                )
                                 Button(onClick = {
-                                    context.startActivity(Intent(context, SfzFoldersActivity::class.java)
+                                    context.startActivity(Intent(context, SoundpackFoldersActivity::class.java)
                                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                                }, enabled = !loading, modifier = Modifier.fillMaxWidth()) {
+                                }, enabled = !loadingResource, modifier = Modifier.fillMaxWidth()) {
                                     Text("SFZ folders")
                                 }
                             }

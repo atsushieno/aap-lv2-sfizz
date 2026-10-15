@@ -4,45 +4,37 @@ This repository is an example port of sfizz LV2 plugin to [Audio Plugins For And
 
 ## SFZ instruments
 
-The native Compose UI includes an expandable SFZ selector alongside the plugin parameters, rendered as a collapsible directory tree. It lists three kinds of sources:
+The native Compose UI includes an expandable SFZ selector alongside the plugin parameters, rendered as a collapsible tree. SFZ content comes through the soundpack libraries (soundpack-provider-for-android), from three kinds of sources:
 
-- the **bundled** Splendid Grand Piano,
-- instruments published by **SFZ resource providers** — other installed apps that expose immutable instrument packs, and
-- **SFZ folders** — document trees you pick from local storage.
+- the **bundled** Splendid Grand Piano, which this app publishes as a soundpack like any pack app,
+- **SFZ packs** published by other installed apps, such as [aap-sfz-salamander-drumkit](https://github.com/atsushieno/aap-sfz-salamander-drumkit) and [aap-sfz-vpo3](https://github.com/atsushieno/aap-sfz-vpo3), and
+- **SFZ folders**: folders you put on the device yourself (over ADB or MTP, for example) and link, either in the plugin UI or in the Soundpack Manager.
 
-Selecting an entry loads it into the running sfizz instance without restarting the plugin; expect a brief mute while the instrument changes. The selection is persisted by stable identity (provider component + pack id + revision, or the folder tree URI) and restored on process restart. If the provider or folder is no longer available, the instrument is reported as unavailable rather than silently substituted.
+Selecting an entry loads it into the running sfizz instance without restarting the plugin; expect a brief mute while the instrument changes. The selection is saved in the plugin state as a `commons-soundpack://` identity (kind, pack id, entry path, plus the pack revision for immutable packs) and restored on process restart. If the pack or folder is no longer available, the instrument is reported as unavailable rather than silently substituted.
+
+Selections saved by AAP Sfizz 0.6 and earlier (`aap-sfz://…`) are not translated, and show as unavailable; select the instrument again.
 
 ### SFZ folders
 
-To add local instruments, expand the selector, open **SFZ folders**, and choose **Add folder**. Select a folder containing both the SFZ files and their samples. Android grants persistent read access to that tree; on recent Android versions select a subfolder of Downloads, not the Downloads root itself.
+In the plugin UI, expand the SFZ selector and choose **SFZ folders**, then **Add folder**. Select a folder containing both the SFZ files and their samples. Android grants persistent read access to that tree; on recent Android versions select a subfolder of Downloads, not the Downloads root itself. Folders linked in AAP Sfizz 0.6 are carried over on first start.
 
-Folder discovery indexes relative paths only. SFZ includes and samples are opened individually through the document provider when sfizz requests them; unrelated files are not read or packaged. Local files are mapped directly and their descriptors closed after mapping. A provider returning a non-seekable stream uses a temporary cache for that requested file only. Relative paths may traverse parents within the selected tree, but cannot escape it. Do not modify or truncate sample files while an instrument is using them; select the instrument again to reload changes.
+These folders are private to AAP Sfizz. Folders shared in the Soundpack Manager (`org.androidaudioplugin.soundpack.manager`) appear next to them with no further step, because the Manager shares them with every soundpack app.
 
-### SFZ resource providers
+On Android 14 and later, Android blocks the plugin UI from opening the folder screen while another app (a DAW) shows it.
 
-A *provider* is a normal Android app that exposes one or more immutable SFZ packs to AAP Sfizz (and to any other host that speaks the same contract) over a bound service. AAP Sfizz discovers providers by the intent action `org.androidaudioplugin.SfzResourceService.V1` and binds to each matching component; a host targeting Android 11+ must declare that action under `<queries>` in its own manifest.
+Folder discovery indexes relative paths only. SFZ includes and samples are opened individually when sfizz requests them; unrelated files are not read or packaged. Local files are mapped directly and their descriptors closed after mapping. A document provider that returns a non-seekable stream uses a temporary cache for that requested file only. Relative paths may traverse parents within the selected folder, but cannot escape it. Do not modify or truncate sample files while an instrument is using them; select the instrument again to reload changes.
 
-The `:sfz-provider` library module in this repository defines the contract:
+### Publishing SFZ packs
 
-- AIDL `ISfzResourceService` — `getProtocolVersion()`, `listInstruments(offset, limit)` (paginated `Bundle`s carrying `id`, `label`, `revision`, and an optional asset-relative `path` used for tree display), and `openInstrument(instrumentId, revision)`.
-- AIDL `ISfzResourceSession` — `getEntryPath()`, `listResources(offset, limit)`, `openResource(name)` returning a read-only `AssetFileDescriptor` (start offset plus finite length; an APK asset is a sub-range of the APK file), and `close()`.
-- `AssetSfzResourceService` — an abstract `Service` that implements the whole contract from a list of `Instrument(id, label, revision, assetRoot, entry)` values backed by APK assets. Subclass it, override `instruments`, and register it with the `SfzResourceService.V1` intent filter.
+An SFZ pack app depends on `soundpack-provider-sdk` and declares an `SfzAssetPackProvider` with the action `org.androidaudioplugin.soundpack.sfz.V1`; see soundpack-provider-for-android's README. Any app that reads SFZ packs through `soundpack-client` sees it, not only AAP Sfizz. The contract is provisional until its V1 freeze.
 
-Provider requirements:
-
-- Sample and SFZ files must be stored **uncompressed** so `AssetManager.openFd()` can hand out a mappable descriptor. Configure `androidResources { noCompress += listOf("sfz", "wav", "flac", "ogg", "mp3") }` (see `sample-sfz-provider/build.gradle.kts`).
-- A pack is **immutable**. Bump `revision` whenever any resource bytes or names change; hosts pin a selection to `(instrumentId, revision)`.
-- `assetRoot` is the entire sharing boundary — everything under it (including samples shared between instruments) is listable and openable, and nothing outside it is. Do not point it at an asset directory that also holds confidential data.
-
-`sample-sfz-provider` is a minimal working example: one instrument (`pack/instruments/main.sfz`) with a nested `#include` and a WAV sample. AAP Sfizz itself publishes the bundled piano through the same contract via `BundledSfzResourceService`, so the bundled and add-on paths are identical.
-
-Inside the plugin process, `SfzResourceClient` performs the IPC off the UI/audio thread, collects the pack's descriptors into a `Snapshot`, and passes them to native code (`native/AudioPluginLV2Resources_jni.cpp`, library `aap-lv2-sfizz-resources`). The sfizz build is patched to accept a resource-resolver feature (`urn:org.androidaudioplugin:sfz-resources:1`); resource bytes are mapped from the descriptor ranges rather than copied wholesale, and no provider IPC happens on the audio callback. The `SfzResourceService.V1` action, its AIDL, and the pack namespace rules are still provisional and may change before a frozen public contract.
+Inside the plugin process, `SoundpackResources` opens a selection with `SoundpackClient` and hands the pack's file list to native code (`native/AudioPluginLV2Resources_jni.cpp`, library `aap-lv2-sfizz-resources`). Each file is opened when sfizz asks for it, as a read-only `AssetFileDescriptor`, and mapped rather than copied. The sfizz build is patched to accept a resource-resolver feature (`urn:org.androidaudioplugin:sfz-resources:1`), and no provider IPC happens on the audio callback.
 
 ## Building
 
 See our [GitHub Actions script](.github/workflows/actions.yml) for the normative setup.
 
-For local desktop development, prepare sfizz, build the local aap-lv2 submodule into Maven Local, then build this app:
+For local desktop development, prepare sfizz, build the local aap-lv2 submodule into Maven Local, then build this app. Until their first release, the soundpack libraries also come from Maven Local: run `./gradlew publishToMavenLocal` in soundpack-provider-for-android first.
 
 ```
 $ scripts/prepare-sources.sh
@@ -72,6 +64,17 @@ $ external/aap-lv2/tools/aap-import-lv2-metadata/build/aap-import-lv2-metadata a
 Note that the resources may be relocated; they sometimes do.
 
 `app` directory directly references sfizz's own `CMakeLists.txt` from `build.gradle.kts`. Though note that sfizz itself is patched during source preparation.
+
+### Device tests
+
+`StatePersistenceTest` needs [aap-sfz-salamander-drumkit](https://github.com/atsushieno/aap-sfz-salamander-drumkit) installed. `SfzFolderMigrationTest` answers the system folder picker (in English) and uses `/sdcard/Music/SoundpackSfizzMigrationTest`, which it removes afterwards.
+
+Restoring a state in a new process runs as two instrumentation runs, and is skipped otherwise:
+
+```
+$ adb shell am instrument -w -e stateRestart save -e class org.androidaudioplugin.aap_lv2_sfizz.StatePersistenceTest#stateRestoresInANewProcess org.androidaudioplugin.ports.lv2.sfizz.test/androidx.test.runner.AndroidJUnitRunner
+$ adb shell am instrument -w -e stateRestart restore -e class org.androidaudioplugin.aap_lv2_sfizz.StatePersistenceTest#stateRestoresInANewProcess org.androidaudioplugin.ports.lv2.sfizz.test/androidx.test.runner.AndroidJUnitRunner
+```
 
 ## Licensing notice
 

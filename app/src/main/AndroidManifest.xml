@@ -10,7 +10,6 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true">
-        <activity android:name="org.androidaudioplugin.samples.aap_sfizz.SfzFoldersActivity" android:exported="false" />
         <activity android:name="org.androidaudioplugin.samples.aap_sfizz.SfizzActivity"
             android:exported="true">
             <intent-filter>
@@ -40,13 +39,25 @@
                 />
         </service>
         <service android:name="org.androidaudioplugin.AudioPluginViewService" android:exported="true" />
-        <service
-            android:name="org.androidaudioplugin.samples.aap_sfizz.BundledSfzResourceService"
+        <!-- The bundled Splendid Grand Piano, published as a soundpack like any pack app, so
+             other SFZ apps can use it too. -->
+        <provider
+            android:name="org.androidaudioplugin.soundpack.sdk.SfzAssetPackProvider"
+            android:authorities="${applicationId}.soundpack.sfz"
             android:exported="true">
             <intent-filter>
-                <action android:name="org.androidaudioplugin.SfzResourceService.V1" />
+                <action android:name="org.androidaudioplugin.soundpack.sfz.V1" />
             </intent-filter>
-        </service>
+            <meta-data
+                android:name="org.androidaudioplugin.soundpack#Packs"
+                android:resource="@xml/soundpack_sfz" />
+        </provider>
+        <!-- SFZ folders the user links in the plugin UI ("SFZ folders"). Private:
+             not exported. -->
+        <provider
+            android:name="org.androidaudioplugin.soundpack.host.LocalSfzFolderProvider"
+            android:authorities="${applicationId}.soundpack.local.sfz"
+            android:exported="false" />
         <service android:name="org.androidaudioplugin.midideviceservice.StandaloneAudioPluginMidiDeviceService"
             android:permission="android.permission.BIND_MIDI_DEVICE_SERVICE"
             android:exported="true">

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The piano shipped in the APK. Bump the revision if its files change: saved projects pin it. -->
+<packs>
+    <pack
+        id="io.github.sfzinstruments.splendid-grand-piano"
+        label="Splendid Grand Piano (bundled)"
+        revision="1"
+        assetRoot="lv2/sfizz.lv2/Contents/Resources/SplendidGrandPiano"
+        summary="sfzinstruments' Splendid Grand Piano, bundled with AAP Sfizz."
+        license="Public domain">
+        <entry path="Splendid Grand Piano.sfz" label="Splendid Grand Piano" />
+    </pack>
+</packs>
