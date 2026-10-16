@@ -132,7 +132,7 @@ index 37305afd..c06d359d 100644
 +@LV2PLUGIN_IF_ENABLE_UI@    ui:binary <@PROJECT_NAME@_ui@CMAKE_SHARED_MODULE_SUFFIX@> ;
  @LV2PLUGIN_IF_ENABLE_UI@    rdfs:seeAlso <@PROJECT_NAME@_ui.ttl> .
 diff --git a/plugins/lv2/sfizz.cpp b/plugins/lv2/sfizz.cpp
-index 8fc65ba9..e10334f3 100644
+index 8fc65ba9..2a90e631 100644
 --- a/plugins/lv2/sfizz.cpp
 +++ b/plugins/lv2/sfizz.cpp
 @@ -43,6 +43,9 @@
@@ -202,11 +202,12 @@ index 8fc65ba9..e10334f3 100644
      // Setup the loggers
      lv2_log_logger_init(&self->logger, self->map, self->log);
  
-@@ -1447,12 +1486,60 @@ sfizz_lv2_load_file(sfizz_plugin_t *self, const char *file_path)
+@@ -1447,12 +1486,63 @@ sfizz_lv2_load_file(sfizz_plugin_t *self, const char *file_path)
      }
  
      ///
 +    self->resource_identity.clear();
++    self->resource_pending = false;
      bool status = sfizz_load_or_import_file(self->synth, file_path, nullptr);
      sfizz_lv2_update_sfz_info(self);
      sfizz_lv2_update_file_info(self, file_path);
@@ -218,7 +219,8 @@ index 8fc65ba9..e10334f3 100644
 +                                   sfizz_resource_pack_t& pack)
 +{
 +    bool ok = sfizz_load_resources(self->synth, &pack); // consumes snapshot on all exits
-+    self->resource_identity = identity; // retain missing/failed selection for state and retry
++    self->resource_identity = identity; // retain a failed selection for the state
++    self->resource_pending = false;
 +    sfizz_lv2_update_sfz_info(self);
 +    return ok;
 +}
@@ -247,8 +249,9 @@ index 8fc65ba9..e10334f3 100644
 +    if (!host)
 +        return;
 +    s_default_resource_host.store(host, std::memory_order_release);
-+    // Complete a selection restored from state before a host existed.
-+    if (!self->resource_identity.empty()) {
++    // Complete a selection restored from state before a host existed. A loaded selection is
++    // not loaded again: the bridge sets the host before every load.
++    if (self->resource_pending && !self->resource_identity.empty()) {
 +        std::string pending = self->resource_identity;
 +        load_resource(handle, pending.c_str());
 +    }
@@ -263,7 +266,7 @@ index 8fc65ba9..e10334f3 100644
  static bool
  sfizz_lv2_load_scala_file(sfizz_plugin_t *self, const char *file_path)
  {
-@@ -1493,12 +1580,32 @@ restore(LV2_Handle instance,
+@@ -1493,12 +1583,33 @@ restore(LV2_Handle instance,
      // Set default values
      self->last_keyswitch = -1;
      sfizz_lv2_get_default_sfz_path(self, self->sfz_file_path, MAX_PATH_SIZE);
@@ -289,6 +292,7 @@ index 8fc65ba9..e10334f3 100644
 +        if (!rhost || !rhost->open(rhost->handle, restored_identity.c_str(), &restored_pack)) {
 +            // No host yet or pack unavailable: keep the selection for retry, load empty.
 +            self->resource_identity = restored_identity;
++            self->resource_pending = true;
 +            restored_identity.clear();
 +            status = LV2_STATE_ERR_UNKNOWN;
 +        }
@@ -299,7 +303,7 @@ index 8fc65ba9..e10334f3 100644
      const void *value;
      value = retrieve(handle, self->sfizz_sfz_file_uri, &size, &type, &val_flags);
      if (value)
-@@ -1566,7 +1673,29 @@ restore(LV2_Handle instance,
+@@ -1566,7 +1677,29 @@ restore(LV2_Handle instance,
      // Load an empty file to remove the default sine, and then the new file.
      sfizz_load_string(self->synth, "empty.sfz", "");
      self->check_modification = false;
@@ -330,7 +334,7 @@ index 8fc65ba9..e10334f3 100644
      {
          lv2_log_note(&self->logger,
              "[sfizz] Restoring the file %s\n", self->sfz_file_path);
-@@ -1632,22 +1761,31 @@ save(LV2_Handle instance,
+@@ -1632,22 +1765,31 @@ save(LV2_Handle instance,
  
      const char *path;
  
@@ -376,7 +380,7 @@ index 8fc65ba9..e10334f3 100644
  
      // Save the scala file path
      path = self->scala_file_path;
-@@ -1924,6 +2062,10 @@ midnam_free(char *string)
+@@ -1924,6 +2066,10 @@ midnam_free(char *string)
  static const void *
  extension_data(const char *uri)
  {
@@ -401,7 +405,7 @@ index e4c6d8b8..b44c0fe8 100644
    doap:maintainer [
      foaf:name     "@LV2PLUGIN_AUTHOR@" ;
 diff --git a/plugins/lv2/sfizz_lv2_plugin.h b/plugins/lv2/sfizz_lv2_plugin.h
-index e6722397..75dd0354 100644
+index e6722397..7e54b1c4 100644
 --- a/plugins/lv2/sfizz_lv2_plugin.h
 +++ b/plugins/lv2/sfizz_lv2_plugin.h
 @@ -17,9 +17,11 @@
@@ -417,12 +421,15 @@ index e6722397..75dd0354 100644
  // This assumes that the longest path is the default sfz file; if not, change it
  #define MAX_BUNDLE_PATH_SIZE (MAX_PATH_SIZE - sizeof(DEFAULT_SFZ_FILE))
  
-@@ -114,6 +116,9 @@ struct sfizz_plugin_t
+@@ -114,6 +116,12 @@ struct sfizz_plugin_t
      sfizz_client_t *client {};
      spin_mutex_t *synth_mutex {};
      bool expect_nominal_block_length {};
 +    const sfizz_resource_host_t* resource_host {};
 +    std::string resource_identity;
++    // resource_identity is not loaded yet: restored before a host existed, or its pack was
++    // unavailable. set_resource_host() completes it.
++    bool resource_pending {};
 +    std::mutex resource_mutex;
      char sfz_file_path[MAX_PATH_SIZE] {};
      char scala_file_path[MAX_PATH_SIZE] {};
