@@ -11,11 +11,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import org.androidaudioplugin.samples.aap_sfizz.SfizzActivity
 import org.androidaudioplugin.samples.aap_sfizz.SfzSetupInitializer
 import org.androidaudioplugin.samples.aap_sfizz.SoundpackResources
 import org.androidaudioplugin.soundpack.SoundpackKind
 import org.androidaudioplugin.soundpack.host.FolderRegistry
+import org.androidaudioplugin.ui.compose.app.PluginManagerActivity
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -82,11 +82,11 @@ class SfzFolderMigrationTest {
         shell("rm -rf /sdcard/Music/$NAME", "cp -r ${stage.absolutePath} /sdcard/Music/$NAME")
     }
 
-    /** OPEN_DOCUMENT_TREE from SfizzActivity, then the persisted read grant, as 0.6 kept it. */
+    /** OPEN_DOCUMENT_TREE from the app's activity, then the persisted read grant, as 0.6 kept it. */
     private fun pickAsSfizz06(): Uri {
         val initial = DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:Music/$NAME")
         val result = CompletableFuture<Uri?>()
-        ActivityScenario.launch(SfizzActivity::class.java).use { scenario ->
+        ActivityScenario.launch(PluginManagerActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 activity.activityResultRegistry.register("legacy-folder", ActivityResultContracts.OpenDocumentTree()) { result.complete(it) }
                     .launch(initial)
