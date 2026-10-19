@@ -46,6 +46,13 @@ struct Pack {
         JNIEnv* env = nullptr;
         const bool attached = javaVm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK;
         if (attached && javaVm->AttachCurrentThread(&env, nullptr) != JNI_OK) return;
+        // A lazy snapshot holds a pack session: its prefetch threads and the files they opened
+        // that sfizz never took. Close it now, rather than leaving them until the session idles.
+        auto snapshotClass = env->GetObjectClass(snapshot);
+        if (auto close = snapshotClass ? env->GetMethodID(snapshotClass, "close", "()V") : nullptr)
+            env->CallVoidMethod(snapshot, close);
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        if (snapshotClass) env->DeleteLocalRef(snapshotClass);
         env->DeleteGlobalRef(snapshot);
         if (attached) javaVm->DetachCurrentThread();
     }
@@ -196,7 +203,8 @@ aap_sfizz_resource_open(void*, const char* identity, sfizz_resource_pack_t* resu
             *result = {2, pack->entry.c_str(), pack->resources.data(), pack->resources.size(),
                 pack.get(), [](void* owner) { delete static_cast<Pack*>(owner); }, openIndexedResource};
             pack.release();
-            // The index stays alive through the global reference; it owns no open files.
+            // The snapshot, with its session, stays alive through the global reference until
+            // sfizz releases the pack (~Pack closes it).
             env->PopLocalFrame(nullptr);
             if (attached) javaVm->DetachCurrentThread();
             return 1;

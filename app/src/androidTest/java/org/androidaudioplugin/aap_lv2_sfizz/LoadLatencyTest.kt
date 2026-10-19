@@ -1,6 +1,7 @@
 package org.androidaudioplugin.aap_lv2_sfizz
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
@@ -11,6 +12,7 @@ import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import kotlinx.coroutines.runBlocking
@@ -21,11 +23,13 @@ import org.androidaudioplugin.hosting.AudioPluginClientBase
 import org.androidaudioplugin.hosting.NativeRemotePluginInstance
 import org.androidaudioplugin.samples.aap_sfizz.AudioPluginLV2ResourceBridge
 import org.androidaudioplugin.samples.aap_sfizz.SoundpackResources
+import org.androidaudioplugin.soundpack.SoundpackContract
 import org.androidaudioplugin.soundpack.SoundpackIdentity
 import org.androidaudioplugin.soundpack.SoundpackKind
 import org.androidaudioplugin.soundpack.client.SoundpackClient
 import org.androidaudioplugin.soundpack.host.FolderRegistry
 import org.androidaudioplugin.ui.compose.app.PluginManagerActivity
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -241,6 +245,61 @@ class LoadLatencyTest {
         shell("am force-stop org.androidaudioplugin.soundpack.manager")
         measure("Salamander kit, soundpack from a folder", instance, 36) { load(instance, kit) }
         logOpenCost("Salamander kit, soundpack from a folder", kit)
+    }
+
+    /** The kit's folder imported in the Soundpack Manager and read from there, from the
+     * Manager's copy: linked here, shared with the Manager through its share screen with
+     * "Import a copy", and unlinked here, so that loads go through the Manager. Removed from
+     * the Manager afterwards, in its Folders tab, which deletes the copy. */
+    @Test
+    fun salamanderFromManagerImported() {
+        val path = InstrumentationRegistry.getArguments().getString("kitPath") ?: "Music/SoundpackLatencyKit"
+        assumeTrue("no Salamander kit at /sdcard/$path", shell("ls /sdcard/$path/ALL.sfz").contains("ALL.sfz"))
+        val manager = SoundpackContract.Hub.PACKAGE
+        val registry = FolderRegistry.get(context)
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val folder = registry.add(pickFolder(path), setOf(SoundpackKind.SFZ))
+        var shared = false
+        try {
+            context.startActivity(registry.shareWithHubIntent(folder.id)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            device.wait(Until.findObject(By.textStartsWith("Import a copy")), 20_000)!!.click()
+            device.waitForIdle()
+            // The row is one selectable node with the label, or the label's parent.
+            val choice = device.findObject(By.textStartsWith("Import a copy"))
+            val chosen = listOfNotNull(choice, choice?.parent).any { it.isSelected || it.isChecked }
+            assertTrue("Import a copy is chosen", chosen)
+            val started = SystemClock.elapsedRealtime()
+            device.wait(Until.findObject(By.text("Share").enabled(true)), 10_000)!!.click()
+            shared = true
+            // The share screen closes when the Manager has linked the folder and copied it.
+            assertTrue("the Manager is still importing", device.wait(Until.gone(By.textStartsWith("Import a copy")), 300_000))
+            Log.i("LoadLatency", "the Manager imported the kit in %.1f s".format((SystemClock.elapsedRealtime() - started) / 1e3))
+            registry.remove(folder.id)
+            val pack = lookup.catalog().packs.single { it.id == folder.id }
+            assertEquals(manager, pack.endpoint.packageName)
+            val kit = lookup.identityOf(lookup.entries(pack).single { it.path == "ALL.sfz" }).format()
+            shell("am force-stop $manager")
+            withInstance { instance ->
+                measure("Salamander kit, soundpack from a folder imported in the Manager", instance, 36) { load(instance, kit) }
+                logOpenCost("Salamander kit, soundpack from a folder imported in the Manager", kit)
+            }
+        } finally {
+            registry.remove(folder.id)
+            if (shared)
+                removeFromManager(folder.displayName)
+        }
+    }
+
+    /** As a user would, in the Manager's Folders tab (SFZ, the first type). */
+    private fun removeFromManager(name: String) {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        context.startActivity(context.packageManager.getLaunchIntentForPackage(SoundpackContract.Hub.PACKAGE)!!
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+        device.wait(Until.findObject(By.text("Folders")), 15_000)!!.click()
+        device.wait(Until.findObject(By.scrollable(true)), 10_000)?.scrollUntil(Direction.DOWN, Until.findObject(By.text(name)))
+        device.wait(Until.findObject(By.hasChild(By.text(name))), 10_000)!!.findObject(By.text("Remove")).click()
+        assertTrue("removed from the Manager", device.wait(Until.gone(By.text(name)), 30_000))
+        device.pressHome()
     }
 
     /** The kit's folder linked in this app (no Soundpack Manager in between), in place or, with
