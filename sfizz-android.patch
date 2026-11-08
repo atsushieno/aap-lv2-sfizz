@@ -1001,3 +1001,19 @@ index 00000000..08d6c223
 +    REQUIRE(one.getNumRegions() == 1);
 +    REQUIRE(two.getNumRegions() == 2);
 +}
+diff --git a/src/sfizz/Voice.cpp b/src/sfizz/Voice.cpp
+index 6380e26d..5acd1dea 100644
+--- a/src/sfizz/Voice.cpp
++++ b/src/sfizz/Voice.cpp
+@@ -815,8 +815,9 @@ void Voice::renderBlock(AudioSpan<float, 2> buffer) noexcept
+ 
+     impl.age_ += buffer.getNumFrames();
+     if (impl.triggerDelay_) {
+-        // Should be OK but just in case;
+-        impl.age_ = min(impl.age_ - *impl.triggerDelay_, 0);
++        // The age counts from the trigger. Resetting it to 0 made fillWithData()
++        // restart at the next block, which repeated one sample there.
++        impl.age_ = max(impl.age_ - *impl.triggerDelay_, 0);
+         impl.triggerDelay_ = absl::nullopt;
+     }
+ 
